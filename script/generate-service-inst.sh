@@ -2,7 +2,7 @@
 coderun_version="0.1.1"
 echo "Generacion servicio $coderun_version"
 file_name="/opt/services/${nombre_dir}.service"
-cp $file_name ~/copia_${nombre_dir}
+cp $file_name ~/copia_${nombre_dir}.service
     cat >$file_name <<SERVICE
 [Unit]
 Description=$nombre_dir - node
