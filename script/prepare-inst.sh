@@ -33,7 +33,7 @@ else
   read -p "username [${inst_name}_admin]:" db_user
   db_user=${db_user:-${inst_name}_admin}
   read -p "owner [${inst_name}_owner]:" db_owner
-  db_owner=${db_user:-${inst_name}_owner}
+  db_owner=${db_owner:-${inst_name}_owner}
   db_pass=''
   while [[ -z "$db_pass" ]]
     do
