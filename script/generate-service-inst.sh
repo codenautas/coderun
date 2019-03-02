@@ -19,4 +19,4 @@ SyslogIdentifier=$nombre_dir
 [Install]
 WantedBy=multi-user.target
 SERVICE
-diff $file_name ~/copia_${nombre_dir}
+diff $file_name ~/copia_${nombre_dir}.service

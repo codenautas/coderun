@@ -17,4 +17,4 @@ cp $file_name ~/copia_${nombre_dir}.conf
             proxy_cache_bypass \$http_upgrade;
         }
 NGINX
-diff $file_name ~/copia_${nombre_dir}
+diff $file_name ~/copia_${nombre_dir}.conf
