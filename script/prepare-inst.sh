@@ -1,5 +1,5 @@
 #!/bin/bash
-coderun_version="0.1.2"
+coderun_version="0.1.3"
 echo "Preparando instalación $coderun_version"
 read -p 'Nombre de instancia:' inst_name
 file_name="/opt/insts/$inst_name.yaml"
