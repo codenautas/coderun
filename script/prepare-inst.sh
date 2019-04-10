@@ -1,5 +1,5 @@
 #!/bin/bash
-coderun_version = "0.1.1"
+coderun_version="0.1.3"
 echo "Preparando instalación $coderun_version"
 read -p 'Nombre de instancia:' inst_name
 file_name="/opt/insts/$inst_name.yaml"
@@ -18,6 +18,8 @@ else
     done
   read -p "Base URL /[$inst_name]:" base_url
   base_url=${base_url:-$inst_name}
+  read -p "SO user [$inst_name]:" so_user
+  so_user=${so_user:-$inst_name}
 
   echo "# git section"
   read -p "https://[github].com:" git_host
@@ -33,7 +35,7 @@ else
   read -p "username [${inst_name}_admin]:" db_user
   db_user=${db_user:-${inst_name}_admin}
   read -p "owner [${inst_name}_owner]:" db_owner
-  db_owner=${db_user:-${inst_name}_owner}
+  db_owner=${db_owner:-${inst_name}_owner}
   db_pass=''
   while [[ -z "$db_pass" ]]
     do
@@ -60,6 +62,7 @@ server:
   port: $port
   base-url: /$base_url
   session-store: memory
+  user: $so_user
 git:
   project: $git_project
   group: $git_group

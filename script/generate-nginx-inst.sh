@@ -1,5 +1,5 @@
 #!/bin/bash
-coderun_version="0.1.1"
+coderun_version="0.1.3"
 echo "Generacion nginx $coderun_version"
 file_name="/opt/nginx.conf/${nombre_dir}.conf"
 cp $file_name ~/copia_${nombre_dir}.conf
@@ -17,4 +17,4 @@ cp $file_name ~/copia_${nombre_dir}.conf
             proxy_cache_bypass \$http_upgrade;
         }
 NGINX
-diff $file_name ~/copia_${nombre_dir}
+diff $file_name ~/copia_${nombre_dir}.conf
