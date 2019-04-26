@@ -1,7 +1,13 @@
 #!/bin/bash
-coderun_version="0.1.3"
+coderun_version="0.1.4"
 echo "Preparando instalación $coderun_version"
-read -p 'Nombre de instancia:' inst_name
+echo "Definir primero el nombre de instancia."
+echo 'Se exportara como $nombre_dir'
+echo 'Se usara para crear la carpeta /opt/$nombre_dir con la aplicacion y los archivos de configuracion'
+echo '/opt/inst/$nombre_dir.yaml'
+echo '/opt/nginx.conf/$nombre_dir.conf'
+echo '/opt/services/$nombre_dir.service'
+read -p 'Nombre de instancia (o sea dir):' inst_name
 file_name="/opt/insts/$inst_name.yaml"
 if [[ -z "$inst_name" ]]; then
   echo "debe poner el nombre de instancia"
@@ -9,7 +15,7 @@ elif [[ -f "$file_name" ]]; then
   echo "ya existe el archivo $file_name"
   echo "no se puede crear la instancia"
 else
-
+  nombre_dir=$inst_name
   echo "# server section"
   port=''
   while [[ -z "$port" ]]
@@ -76,5 +82,6 @@ install:
     db:
       owner: $db_owner
 YAML
+    echo "se exporto la variable \$nombre_dir=$nombre_dir"
   fi
 fi
