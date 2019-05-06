@@ -4,5 +4,9 @@
   "description": "code runner for server instrumentation",
   "files": [
     "script"
-  ]
+  ],
+  "repository": "codenautas/coderun",
+  "author": "Emilio Platzer",
+  "license": "MIT",
+  "os": ["linux"]  
 }
