@@ -38,10 +38,10 @@ else
   echo "# db section"
   read -p "database [${inst_name}_db]:" db_name
   db_name=${db_name:-${inst_name}_db}
-  read -p "username [${inst_name}_admin]:" db_user
-  db_user=${db_user:-${inst_name}_admin}
   read -p "owner [${inst_name}_owner]:" db_owner
   db_owner=${db_owner:-${inst_name}_owner}
+  read -p "username [${inst_name}_admin]:" db_user
+  db_user=${db_user:-${inst_name}_admin}
   db_pass=''
   while [[ -z "$db_pass" ]]
     do
