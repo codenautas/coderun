@@ -28,8 +28,8 @@ else
   so_user=${so_user:-$inst_name}
 
   echo "# git section"
-  read -p "https://[github].com:" git_host
-  git_host=${git_host:-github}
+  read -p "https://[gitlab].com:" git_host
+  git_host=${git_host:-gitlab}
   read -p "https://$git_host.com/[codenautas]:" git_group
   git_group=${git_group:-codenautas}
   read -p "https://$git_host.com/$git_group/[$inst_name]:" git_project
