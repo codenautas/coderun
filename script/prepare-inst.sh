@@ -1,5 +1,5 @@
 #!/bin/bash
-coderun_version="0.1.4"
+coderun_version="0.1.5"
 echo "Preparando instalación $coderun_version"
 echo "Definir primero el nombre de instancia."
 echo 'Se exportara como $nombre_dir'
@@ -67,7 +67,6 @@ coderun:
 server:
   port: $port
   base-url: /$base_url
-  session-store: memory
   user: $so_user
 git:
   project: $git_project

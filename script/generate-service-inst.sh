@@ -1,5 +1,5 @@
 #!/bin/bash
-coderun_version="0.1.4"
+coderun_version="0.1.5"
 echo "Generacion servicio $coderun_version"
 file_name="/opt/services/${nombre_dir}.service"
 cp $file_name ~/copia_${nombre_dir}.service
