@@ -1,6 +1,6 @@
 {
   "name": "coderun",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "code runner for server instrumentation",
   "files": [
     "script"

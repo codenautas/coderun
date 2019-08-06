@@ -1,5 +1,5 @@
 #!/bin/bash
-coderun_version="0.1.5"
+coderun_version="0.1.6"
 echo "Preparando instalación $coderun_version"
 echo "Definir primero el nombre de instancia."
 echo 'Se exportara como $nombre_dir'
@@ -8,7 +8,8 @@ echo '/opt/inst/$nombre_dir.yaml'
 echo '/opt/nginx.conf/$nombre_dir.conf'
 echo '/opt/services/$nombre_dir.service'
 read -p 'Nombre de instancia (o sea dir):' inst_name
-file_name="/opt/insts/$inst_name.yaml"
+# file_name="/opt/insts/$inst_name.yaml"
+file_name="$inst_name.yaml"
 if [[ -z "$inst_name" ]]; then
   echo "debe poner el nombre de instancia"
 elif [[ -f "$file_name" ]]; then
@@ -36,6 +37,23 @@ else
   git_project=${git_project:-$inst_name}
 
   echo "# db section"
+  read -p "host [DIRECT]:" db_host
+  db_host=${db_host:-DIRECT}
+  echo "por ahora tengo $db_host"
+  if [[ $db_host == "DIRECT" ]]; then
+    echo "veo DIRECTO"
+    db_host_port_section=""
+  else
+    read -p "port [5432]:" db_port
+    db_port=${db_port:-5432}
+    db_host_port_section=""
+    db_host_port_section+=$'\n'
+    db_host_port_section+="  host: $db_host" 
+    db_host_port_section+=$'\n'
+    db_host_port_section+="  port: $db_port"
+YAML
+    echo "PREGUNTÉ POR LA SECCION $db_host_port_section"
+  fi
   read -p "database [${inst_name}_db]:" db_name
   db_name=${db_name:-${inst_name}_db}
   read -p "username [${inst_name}_admin]:" db_user
@@ -72,7 +90,7 @@ git:
   project: $git_project
   group: $git_group
   host: https://$git_host.com
-db:
+db:$db_host_port_section
   database: $db_name
   user: $db_user
   password: $db_pass
