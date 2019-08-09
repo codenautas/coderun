@@ -1,5 +1,5 @@
 #!/bin/bash
-coderun_version="0.1.6"
+coderun_version="0.1.7"
 echo "Preparando instalación $coderun_version"
 echo "Definir primero el nombre de instancia."
 echo 'Se exportara como $nombre_dir'
@@ -8,8 +8,7 @@ echo '/opt/inst/$nombre_dir.yaml'
 echo '/opt/nginx.conf/$nombre_dir.conf'
 echo '/opt/services/$nombre_dir.service'
 read -p 'Nombre de instancia (o sea dir):' inst_name
-# file_name="/opt/insts/$inst_name.yaml"
-file_name="$inst_name.yaml"
+file_name="/opt/insts/$inst_name.yaml"
 if [[ -z "$inst_name" ]]; then
   echo "debe poner el nombre de instancia"
 elif [[ -f "$file_name" ]]; then
