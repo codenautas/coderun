@@ -1,6 +1,6 @@
 {
   "name": "coderun",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "code runner for server instrumentation",
   "files": [
     "script"
@@ -8,5 +8,7 @@
   "repository": "codenautas/coderun",
   "author": "Emilio Platzer",
   "license": "MIT",
-  "os": ["linux"]  
+  "os": [
+    "linux"
+  ]
 }
