@@ -6,7 +6,17 @@ if "%1" == "path" (
   set "Path=%path%;%~2;"
 ) else if "%1" == "create-db" (
   psql --file=local-db-dump-create-db.sql
-) else if "%1" == "create-schema" (
+) else if "%1" == "" (
+  psql --no-password -c "select version() as ""postgres version"""
+  echo %0 create-db
+  echo %0 create-schema
+  echo %0 other.sql database_db
+) else (
+  if "%1" == "create-schema" (
+    set script=local-db-dump.sql
+  ) else (
+    set script=%1
+  )
   if "%2" == "" (
     set vi_db=no_todavia
     FOR /F "tokens=1* delims=:" %%i IN (local-config.yaml) DO (
@@ -26,19 +36,18 @@ if "%1" == "path" (
       echo %0 %1 esta_db
     )
   ) else (
-    psql --file=local-db-dump.sql %single_transaction% %2
+    psql --file=!script! %single_transaction% %2
   )
-) else (
-  psql --no-password -c "select version()"
 )
 if errorlevel 9009 (
   echo No se encontro el psql. Probar agregarlo al path con:
   echo %0 path "C:\Program Files\PostgreSQL\12\bin"
-) else if errorlevel 2 (
-  echo Quizas haya que agregar el puerto, el usuario o la clave
-  echo set PGPORT=54312
-  echo set PGUSER=postgres
-  echo set PGPASSWORD=admin
 ) else if errorlevel 1 (
+  if "%PGPORT%" == "" (
+    echo Quizas haya que agregar el puerto, el usuario o la clave
+    echo set PGPORT=54312
+    echo set PGUSER=postgres
+    echo set PGPASSWORD=admin
+  )
   echo %errorlevel%
 )
