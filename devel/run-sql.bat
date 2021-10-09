@@ -45,7 +45,7 @@ if errorlevel 9009 (
 ) else if errorlevel 1 (
   if "%PGPORT%" == "" (
     echo Quizas haya que agregar el puerto, el usuario o la clave
-    echo set PGPORT=54312
+    echo set PGPORT=54313
     echo set PGUSER=postgres
     echo set PGPASSWORD=admin
   )
