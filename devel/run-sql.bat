@@ -49,5 +49,5 @@ if errorlevel 9009 (
     echo set PGUSER=postgres
     echo set PGPASSWORD=admin
   )
-  echo %errorlevel%
+  echo err-code: %errorlevel%
 )
