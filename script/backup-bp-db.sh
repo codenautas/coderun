@@ -8,7 +8,7 @@ ROTATE=${3:-"A"}
 echo "$DATABASE|$TARGET_PATH|$ROTATE"
 
 LOG_FILE="$TARGET_PATH/backups.log"
-DUMP_FILE="$TARGET_PATH/last-backup.backup"
+DUMP_FILE="$TARGET_PATH/local-dump.psql"
 OPTIONS="-F custom --blobs --exclude-table-data his.* --exclude-table-data his_*.* --exclude-table-data mant*.* --exclude-table-data temp*.* --exclude-table-data operaciones*.*"
 
 pg_dump --dbname=$DATABASE --file=$DUMP_FILE $OPCIONES #2>$LOG_FILE

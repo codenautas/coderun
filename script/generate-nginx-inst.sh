@@ -1,5 +1,5 @@
 #!/bin/bash
-coderun_version="0.2.1"
+coderun_version="0.2.2"
 echo "Generacion nginx $coderun_version"
 file_name="/opt/nginx.conf/${nombre_dir}.conf"
 cp $file_name ~/copia_${nombre_dir}.conf
@@ -12,7 +12,7 @@ cp $file_name ~/copia_${nombre_dir}.conf
             proxy_set_header x-Host \$host;
             proxy_set_header x-inmediate-IP \$remote_addr;
             proxy_set_header X-Forwarded-Proto https;
-            proxy_set_header X-coderun-version '0.2.1';
+            proxy_set_header X-coderun-version '$coderun_version';
             proxy_cache_bypass \$http_upgrade;
         }
 NGINX
