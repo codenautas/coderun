@@ -2,7 +2,7 @@
 #$1: db_name
 #$2: target_path
 DATABASE=$1
-TARGET_PATH=${2:-"."}
+TARGET_PATH="$2/$1"
 ROTATE=${3:-"A"}
 
 echo "$DATABASE|$TARGET_PATH|$ROTATE"
@@ -16,11 +16,21 @@ pg_dump --dbname=$DATABASE --file=$DUMP_FILE $OPCIONES #2>$LOG_FILE
 # BACKUP-ROTATION
 if [ "$ROTATE"  == "A" ]
 then
-    DAILY="$TARGET_PATH/$DATABASE-d-$(date +%w).gz"
-    gzip <$DUMP_FILE >$DAILY
-    cp $DAILY "$TARGET_PATH/$DATABASE-$(date +%Y).gz"
-    cp $DAILY "$TARGET_PATH/$DATABASE-m-$(date +%m).gz"
-    WEEK=$(expr $(date +%W) % 6)
-    cp $DAILY "$TARGET_PATH/$DATABASE-w-$WEEK.gz"
+    ZIP_PREFIX="$TARGET_PATH/$DATABASE-"
+    DOW="$(date +%w)"
+    if [ "$DOW" == "1" ]
+    then
+        ZIP_SUFIX="$(date +%Y).gz"
+    elif [ "$DOW" == "3" ]
+    then
+        ZIP_SUFIX="m-$(date +%m).gz"
+    elif [ "$DOW" == "5" ]
+    then
+        WEEK=$(expr $(date +%W) % 6)
+        ZIP_SUFIX="w-$WEEK.gz"
+    else
+        ZIP_SUFIX="d-$DOW.gz"
+    fi
+    gzip <$DUMP_FILE >$ZIP_PREFIX$ZIP_SUFIX
     echo "$TARGET_PATH/$DATABASE-w-$WEEK.gz"
 fi
