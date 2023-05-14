@@ -11,7 +11,7 @@ LOG_FILE="$TARGET_PATH/backups.log"
 DUMP_FILE="$TARGET_PATH/local-dump.psql"
 OPTIONS="-F custom --blobs --exclude-table-data his.* --exclude-table-data his_*.* --exclude-table-data mant*.* --exclude-table-data temp*.* --exclude-table-data operaciones*.*"
 
-pg_dump --dbname=$DATABASE --file=$DUMP_FILE $OPCIONES #2>$LOG_FILE
+pg_dump --dbname=$DATABASE --file=$DUMP_FILE $OPTIONS #2>$LOG_FILE
 
 # BACKUP-ROTATION
 if [ "$ROTATE"  == "A" ]
