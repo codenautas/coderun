@@ -8,7 +8,7 @@ ori_db_user=$4
 install_dump_db_owner=$5
 db_user=$6
 
-echo "$SOURCE_PATH|$DATABASE|ori_install_dump_db_owner=$ori_install_dump_db_owner|ori_db_user=$ori_db_user|install_dump_db_owner=$install_dump_db_owner|db_user=$db_user"
+echo "repopulate $SOURCE_PATH|$DATABASE|ori_install_dump_db_owner=$ori_install_dump_db_owner|ori_db_user=$ori_db_user|install_dump_db_owner=$install_dump_db_owner|db_user=$db_user"
 
 LOG_FILE="$SOURCE_PATH/repopulate.log"
 DUMP_FILE="$SOURCE_PATH/local-dump.psql"
