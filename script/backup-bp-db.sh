@@ -9,7 +9,7 @@ echo "$DATABASE|$TARGET_PATH|$ROTATE"
 
 LOG_FILE="$TARGET_PATH/backups.log"
 DUMP_FILE="$TARGET_PATH/local-dump.psql"
-OPTIONS="-F plain --blobs --exclude-table-data his.* --exclude-table-data his_*.* --exclude-table-data mant*.* --exclude-table-data temp*.* --exclude-table-data operaciones*.*"
+OPTIONS="-F plain --blobs --exclude-table-data his.* --exclude-table-data his_*.* --exclude-table-data mant*.* --exclude-table-data temp*.* --exclude-table-data operaciones*.* --exclude-schema public"
 
 pg_dump --dbname=$DATABASE --file=$DUMP_FILE $OPTIONS #2>$LOG_FILE
 
