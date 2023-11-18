@@ -16,7 +16,7 @@ echo "$DATABASE|$TARGET_PATH|$ROTATE"
 
 LOG_FILE="$TARGET_PATH/backups.log"
 DUMP_FILE="$TARGET_PATH/local-dump.psql"
-DEF_OPTS=" -F plain --blobs --exclude-table-data his.* --exclude-table-data his_*.* --exclude-table-data mant*.* --exclude-table-data *.bitacora --exclude-table-data temp*.* --exclude-table-table-data operaciones*.* --exclude-schema public"
+DEF_OPTS=" -F plain --blobs --exclude-table-data his.* --exclude-table-data his_*.* --exclude-table-data mant*.* --exclude-table-data *.bitacora --exclude-table-data temp*.* --exclude-table-data operaciones*.* --exclude-schema public"
 
 date +"%y-%m-%d %H:%M" 2>$LOG_FILE
 pg_dump --dbname=$DATABASE --file=$DUMP_FILE $PARAM_OPTS $DEF_OPTS #2>$LOG_FILE
