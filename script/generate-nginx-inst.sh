@@ -1,5 +1,5 @@
 #!/bin/bash
-coderun_version="0.2.4"
+coderun_version="0.2.5"
 echo "Generacion nginx $coderun_version"
 file_name="/opt/nginx.conf/${nombre_dir}.conf"
 cp $file_name ~/copia_${nombre_dir}.conf

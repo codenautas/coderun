@@ -1,5 +1,5 @@
 #!/bin/bash
-coderun_version="0.2.4"
+coderun_version="0.2.5"
 echo "Generacion de todos los archivos de configuracion $coderun_version"
 if [ -d /opt/nginx.conf ]; then
   ./generate-nginx-insts.sh
