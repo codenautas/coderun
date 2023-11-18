@@ -1,4 +1,3 @@
-
 #!/bin/bash
 #$1: db_name
 #$2: target_path
