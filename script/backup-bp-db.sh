@@ -18,9 +18,9 @@ LOG_FILE="$TARGET_PATH/backups.log"
 DUMP_FILE="$TARGET_PATH/local-dump.psql"
 DEF_OPTS=" -F plain --blobs --exclude-table-data his.* --exclude-table-data his_*.* --exclude-table-data mant*.* --exclude-table-data *.bitacora --exclude-table-data temp*.* --exclude-table-data operaciones*.* --exclude-schema public"
 
-date +"%y-%m-%d %H:%M" &> $LOG_FILE
-pg_dump --dbname=$DATABASE --file=$DUMP_FILE $PARAM_OPTS $DEF_OPTS &> $LOG_FILE
-date +"%y-%m-%d %H:%M" &> $LOG_FILE
+date +"%y-%m-%d %H:%M" &>> $LOG_FILE
+pg_dump --dbname=$DATABASE --file=$DUMP_FILE $PARAM_OPTS $DEF_OPTS &>> $LOG_FILE
+date +"%y-%m-%d %H:%M" &>> $LOG_FILE
 
 # BACKUP-ROTATION
 if [ "$ROTATE"  == "A" ]
@@ -41,5 +41,5 @@ then
         ZIP_SUFIX="d-$DOW.gz"
     fi
     gzip <$DUMP_FILE >$ZIP_PREFIX$ZIP_SUFIX
-    echo "$TARGET_PATH/$DATABASE-w-$WEEK.gz" &> $LOG_FILE
+    echo "$TARGET_PATH/$DATABASE-w-$WEEK.gz" &>> $LOG_FILE
 fi
