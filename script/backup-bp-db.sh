@@ -41,5 +41,5 @@ then
         ZIP_SUFIX="d-$DOW.gz"
     fi
     gzip <$DUMP_FILE >$ZIP_PREFIX$ZIP_SUFIX
-    echo "$TARGET_PATH/$DATABASE-w-$WEEK.gz" &>> $LOG_FILE
+    echo "$ZIP_PREFIX$ZIP_SUFIX $(date +"%y-%m-%d %H:%M")" &>> $LOG_FILE
 fi
