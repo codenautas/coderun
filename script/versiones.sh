@@ -31,6 +31,8 @@ echo ""
 get_version "node"
 echo ""
 get_version "nvm"
+echo "ls /opt/.nvm/versions/node/"
+ls /opt/.nvm/versions/node/
 echo ""
 get_version "php"
 
