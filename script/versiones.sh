@@ -42,7 +42,3 @@ get_port "postgres"
 get_port "mysql"
 get_port "node"
 get_port "php"
-<<<<<<< HEAD
-
-=======
->>>>>>> 1b0267d310a2a943f09eaa034d815569b829e1f6
