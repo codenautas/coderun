@@ -36,7 +36,16 @@ if "%1" == "path" (
       echo %0 %1 esta_db
     )
   ) else (
-    psql --file=!script! %single_transaction% %2
+    if "%1" == "dump4install" (
+      ren install\local-dump-2.psql local-dump-3.psql
+      ren install\local-dump.psql local-dump-2.psql
+      pg_dump --dbname=%2 --file=install/local-dump.psql -E UTF8 -F plain --blobs --exclude-schema public
+      echo Se genero el archivo install/local-dump.psql si habia uno anterior se copio a install\local-dump-2.psql
+      echo el proximo `npm start -- --dump` db va a incluir los datos de ese archivo. Se puede continuar asi:
+      echo "call npm run prepare && call npm start -- --dump-db && call run-sql create-schema && call npm start"
+    ) else (
+      psql --file=!script! %single_transaction% %2
+    )
   )
 )
 if errorlevel 9009 (
