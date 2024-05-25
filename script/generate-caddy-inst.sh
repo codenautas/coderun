@@ -1,5 +1,5 @@
 #!/bin/bash
-coderun_version="0.3.0"
+coderun_version="0.3.1"
 echo "Generacion caddy $coderun_version"
 file_name="/opt/caddy.conf/${nombre_dir}.conf"
 cp $file_name ~/copia_caddy_${nombre_dir}.conf

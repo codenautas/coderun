@@ -1,5 +1,5 @@
 #!/bin/bash
-coderun_version="0.3.0"
+coderun_version="0.3.1"
 echo "Preparando instalación $coderun_version"
 echo "Definir primero el nombre de instancia."
 echo 'Se exportara como $nombre_dir'
