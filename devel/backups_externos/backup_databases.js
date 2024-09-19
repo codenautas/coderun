@@ -22,12 +22,10 @@ async function backupDatabase(engine, dbName, backupDir) {
     console.log(`Iniciando backup de la base de datos: ${dbName} en el engine: ${engine.host}:${engine.port}`);
 
     const dumpFilePath = path.join(backupDir, `${dbName}.sql`);
-
     const dumpCommand = `"C:\\Program Files\\PostgreSQL\\16\\bin\\pg_dump.exe" -h ${engine.host} -U ${localConfig.usuario_backup} -F p --blobs --exclude-table-data his.* --exclude-table-data temp.* -f "${dumpFilePath}" ${dbName}`;
 
     return new Promise((resolve, reject) => {
         const dumpProcess = exec(dumpCommand);
-
         let stderr = '';
         dumpProcess.stderr.on('data', (data) => {
             stderr += data.toString();
@@ -36,15 +34,15 @@ async function backupDatabase(engine, dbName, backupDir) {
         dumpProcess.on('exit', (code) => {
             if (code === 0) {
                 console.log(`Backup de la base de datos ${dbName} completado`);
-                resolve(dumpFilePath);
+                resolve({ success: true, dumpFilePath });
             } else {
                 console.error(`Error al realizar el backup de la base de datos ${dbName}`);
-                reject(new Error(`pg_dump falló con código ${code}. Detalles: ${stderr}`));
+                reject({ success: false, error: `pg_dump falló con código ${code}. Detalles: ${stderr}` });
             }
         });
 
         dumpProcess.on('error', (err) => {
-            reject(new Error(`Error al ejecutar pg_dump: ${err.message}`));
+            reject({ success: false, error: `Error al ejecutar pg_dump: ${err.message}` });
         });
     });
 }
@@ -66,6 +64,13 @@ async function compressBackup(filePath) {
     await archive.finalize();
 
     return zipFilePath;
+}
+
+async function logBackupResult(backupFile, dbName, engine, success, error) {
+    const feedbackFile = './backup_feedback.txt';
+    const logEntry = `${dbName},${engine.host},${engine.port},${new Date().toISOString()},${success},${error || 'N/A'},${localConfig.usuario_backup},${localConfig.usuario_inst_responsable_backup}\n`;
+
+    fs.appendFileSync(feedbackFile, logEntry);
 }
 
 async function main() {
@@ -91,11 +96,15 @@ async function main() {
             }
 
             try {
-                const backupPath = await backupDatabase({ host, port }, dbName, backupDir);
-                await compressBackup(backupPath);
-                fs.unlinkSync(backupPath); // Eliminar el archivo .sql después de comprimir
+                const { success, dumpFilePath, error } = await backupDatabase({ host, port }, dbName, backupDir);
+                if (success) {
+                    await compressBackup(dumpFilePath);
+                    fs.unlinkSync(dumpFilePath); // Eliminar el archivo .sql después de comprimir
+                }
+                await logBackupResult(dumpFilePath, dbName, { host, port }, success, error);
             } catch (err) {
                 console.error(`Error durante el backup de la base de datos ${dbName}: ${err.message}`);
+                await logBackupResult(null, dbName, { host, port }, false, err.message);
             }
         }
 
