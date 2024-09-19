@@ -1,0 +1,19 @@
+{
+  "name": "backups_externos",
+  "version": "0.0.1",
+  "description": "script node para backups externos",
+  "files": [
+    "script"
+  ],
+  "devDependencies": {
+    "archiver": "^7.0.1",
+    "pg": "^8.12.0",
+    "js-yaml": "^4.1.0"
+  },
+  "repository": "codenautas/coderun",
+  "author": "Eugenio Arosteguy",
+  "license": "MIT",
+  "os": [
+    "linux"
+  ]
+}

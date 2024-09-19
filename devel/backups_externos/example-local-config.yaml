@@ -1,0 +1,9 @@
+usuario_backup: usuario_pgpass_para_backups
+usuario_inst_responsable_backup: usuario_inst
+db_instrumentacion:
+  host: ip_db_instrumentacion
+  user: usuario_admin_db_instrumentacion
+  password: pass_db_instrumentacion
+  port: port_db_instrumentacion
+  database: instrumentacion_db
+  schema: instrumentacion
