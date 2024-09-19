@@ -12,8 +12,5 @@
   },
   "repository": "codenautas/coderun",
   "author": "Eugenio Arosteguy",
-  "license": "MIT",
-  "os": [
-    "win32"
-  ]
+  "license": "MIT"
 }

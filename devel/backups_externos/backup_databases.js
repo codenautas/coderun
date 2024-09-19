@@ -84,7 +84,7 @@ async function main() {
         for (const line of lines) {
             const [hostPort, dbName] = line.split(',');
             const [host, port] = hostPort.split(':');
-            const backupDir = path.join(backupDirBase, `${host}_${port}`);
+            const backupDir = path.join(backupDirBase, `${host}/${port}`);
 
             if (!fs.existsSync(backupDir)) {
                 fs.mkdirSync(backupDir, { recursive: true });
