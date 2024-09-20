@@ -1,3 +1,4 @@
+const path = require('path');
 const { Client } = require('pg');
 const fs = require('fs');
 const yaml = require('js-yaml');
@@ -5,7 +6,7 @@ const yaml = require('js-yaml');
 // Leer configuración desde local-config.yaml
 function loadConfig() {
     try {
-        const configFile = fs.readFileSync('local-config.yaml', 'utf8');
+        const configFile = fs.readFileSync(path.resolve(__dirname, 'local-config.yaml'), 'utf8');
         return yaml.load(configFile);
     } catch (e) {
         console.error('Error al cargar la configuración:', e);
@@ -51,7 +52,7 @@ async function processBackupFeedback() {
     try {
         await instrumentacionDBClient.connect();
 
-        const feedbackFile = './backup_feedback.txt';
+        const feedbackFile = path.resolve(__dirname, 'backup_feedback.txt');
         if (!fs.existsSync(feedbackFile)) {
             throw new Error('El archivo de feedback no existe.');
         }

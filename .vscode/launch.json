@@ -7,8 +7,20 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "basckup script",
-            "program": "${workspaceFolder}/backup.js",
+            "name": "backup_databases",
+            "program": "${workspaceFolder}/devel/backups_externos/backup_databases.js",
+            "args": [
+                "earosteguy"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/**/*.js"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "store_feedback",
+            "program": "${workspaceFolder}/devel/backups_externos/store_feedback.js",
             "args": [
                 "earosteguy"
             ],
