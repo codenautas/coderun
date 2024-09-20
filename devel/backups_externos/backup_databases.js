@@ -68,7 +68,7 @@ async function compressBackup(filePath) {
 
 async function logBackupResult(backupFile, dbName, engine, success, error) {
     const feedbackFile = './local-backup_feedback.txt';
-    const logEntry = `${dbName},${engine.host},${engine.port},${new Date().toISOString()},${success},${error || 'N/A'},${localConfig.usuario_backup},${localConfig.usuario_inst_responsable_backup}\n`;
+    const logEntry = `${dbName},${engine.servidor},${engine.host},${engine.port},${new Date().toISOString()},${success},${error || 'N/A'},${localConfig.usuario_backup},${usuarioInstResponsable}\n`;
 
     fs.appendFileSync(feedbackFile, logEntry);
 }
@@ -87,9 +87,9 @@ async function main() {
         const lines = fileContent.split('\n').filter(line => line.trim());
 
         for (const line of lines) {
-            const [hostPort, dbName] = line.split(',');
+            const [servidor, hostPort, dbName, usuarioInstResponsable] = line.split(',');
             const [host, port] = hostPort.split(':');
-            const backupDir = path.join(backupDirBase, `${host}/${port}`);
+            const backupDir = path.join(backupDirBase, `${servidor}${host}/${port}`);
 
             if (!fs.existsSync(backupDir)) {
                 fs.mkdirSync(backupDir, { recursive: true });
@@ -101,7 +101,7 @@ async function main() {
                     await compressBackup(dumpFilePath);
                     fs.unlinkSync(dumpFilePath); // Eliminar el archivo .sql después de comprimir
                 }
-                await logBackupResult(dumpFilePath, dbName, { host, port }, success, error);
+                await logBackupResult(dumpFilePath, dbName, {servidor, host, port, usuarioInstResponsable }, success, error);
             } catch (err) {
                 console.error(`Error durante el backup de la base de datos ${dbName}: ${err.message}`);
                 await logBackupResult(null, dbName, { host, port }, false, err.message);

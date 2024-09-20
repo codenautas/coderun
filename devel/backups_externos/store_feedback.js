@@ -67,11 +67,12 @@ async function processBackupFeedback() {
         const lines = fileContent.split('\n').filter(line => line.trim());
 
         for (const line of lines) {
-            const [database, servidor, port, fecha, exitoso, error, usuario_db_backup, usuario_pc_responsable] = line.split(',');
+            const [database, servidor, hostip, port, fecha, exitoso, error, usuario_db_backup, usuario_pc_responsable] = line.split(',');
 
             const record = {
                 database,
                 servidor,
+                hostip,
                 port: parseInt(port),
                 fecha,
                 exitoso: exitoso === 'true',

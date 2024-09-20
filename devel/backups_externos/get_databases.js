@@ -66,7 +66,7 @@ async function writeDatabasesToFile() {
         for (const engine of engines) {
             const databases = await getDatabases(engine);
             for (const dbName of databases) {
-                writeStream.write(`${engine.host}:${engine.puerto},${dbName}\n`);
+                writeStream.write(`${engine.servidor},${engine.host}:${engine.puerto},${dbName},${localConfig.usuario_inst_responsable_backup}\n`);
             }
         }
         writeStream.end();
