@@ -67,7 +67,7 @@ async function compressBackup(filePath) {
 }
 
 async function logBackupResult(backupFile, dbName, engine, success, error) {
-    const feedbackFile = './backup_feedback.txt';
+    const feedbackFile = './local-backup_feedback.txt';
     const logEntry = `${dbName},${engine.host},${engine.port},${new Date().toISOString()},${success},${error || 'N/A'},${localConfig.usuario_backup},${localConfig.usuario_inst_responsable_backup}\n`;
 
     fs.appendFileSync(feedbackFile, logEntry);

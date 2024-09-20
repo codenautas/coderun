@@ -52,7 +52,7 @@ async function processBackupFeedback() {
     try {
         await instrumentacionDBClient.connect();
 
-        const feedbackFile = path.resolve(__dirname, 'backup_feedback.txt');
+        const feedbackFile = path.resolve(__dirname, 'local-backup_feedback.txt');
         if (!fs.existsSync(feedbackFile)) {
             throw new Error('El archivo de feedback no existe.');
         }
