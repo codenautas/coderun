@@ -7,7 +7,7 @@ const yaml = require('js-yaml');
 // Leer configuración desde local-config.yaml
 function loadConfig() {
     try {
-        const configFile = fs.readFileSync('local-config.yaml', 'utf8');
+        const configFile = fs.readFileSync(path.resolve(__dirname, 'local-config.yaml'), 'utf8');
         return yaml.load(configFile);
     } catch (e) {
         console.error('Error al cargar la configuración:', e);
@@ -68,16 +68,26 @@ async function compressBackup(filePath) {
 
 async function logBackupResult(backupFile, dbName, engine, success, error) {
     const feedbackFile = './local-backup_feedback.txt';
-    const logEntry = `${dbName},${engine.servidor},${engine.host},${engine.port},${new Date().toISOString()},${success},${error || 'N/A'},${localConfig.usuario_backup},${usuarioInstResponsable}\n`;
+    const logEntry = `${dbName},${engine.servidor},${engine.host},${engine.port},${new Date().toISOString()},${success},${error || 'N/A'},${localConfig.usuario_backup},${engine.usuarioInstResponsable}\n`;
 
     fs.appendFileSync(feedbackFile, logEntry);
+}
+
+// Función para vaciar el archivo o crearlo si no existe
+async function clearOrCreateFeedbackFile(feedbackFile) {
+    // Abre el archivo en modo escritura, si no existe lo crea
+    fs.openSync(feedbackFile, 'w');
+
+    // Vaciar el archivo sobreescribiéndolo con contenido vacío
+    fs.writeFileSync(feedbackFile, '', 'utf8');
+    console.log('Archivo de feedback vaciado o creado.');
 }
 
 async function main() {
     console.log('Iniciando proceso de backup desde lista...');
     try {
-        const backupListPath = './local-databases_to_backup.txt';
-        const backupDirBase = './local-backups/';
+        const backupListPath = path.resolve(__dirname, './local-databases_to_backup.txt');
+        const backupDirBase = path.resolve(__dirname, './local-backups/');
         
         if (!fs.existsSync(backupListPath)) {
             throw new Error('El archivo de lista de backups no existe.');
@@ -85,6 +95,9 @@ async function main() {
 
         const fileContent = fs.readFileSync(backupListPath, 'utf8');
         const lines = fileContent.split('\n').filter(line => line.trim());
+        
+        const feedbackFile = path.resolve(__dirname, 'local-backup_feedback.txt');
+        await clearOrCreateFeedbackFile(feedbackFile);
 
         for (const line of lines) {
             const [servidor, hostPort, dbName, usuarioInstResponsable] = line.split(',');

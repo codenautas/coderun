@@ -48,12 +48,6 @@ async function insertBackupLog(record) {
     }
 }
 
-async function clearFeedbackFile(feedbackFile) {
-    // Vaciar el archivo sobreescribiéndolo con contenido vacío
-    fs.writeFileSync(feedbackFile, '', 'utf8');
-    console.log('Archivo de feedback vaciado.');
-}
-
 async function processBackupFeedback() {
     try {
         await instrumentacionDBClient.connect();
@@ -85,9 +79,6 @@ async function processBackupFeedback() {
         }
 
         console.log('Proceso de registro en la base de datos completado.');
-
-        // Vaciar el archivo después de registrar los datos
-        await clearFeedbackFile(feedbackFile);
     } catch (err) {
         console.error('Error durante el proceso de registro:', err.message);
     } finally {
