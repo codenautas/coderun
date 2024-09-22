@@ -1,5 +1,5 @@
-usuario_backup: usuario_pgpass_para_backups
-usuario_inst_responsable_backup: usuario_inst
+usuario_backup: usuario_pgpass_para_backups_de_cada_server
+usuario_inst_responsable_backup: usuario_instrumentacion_columna_responsable_backup
 db_instrumentacion:
   host: ip_db_instrumentacion
   user: usuario_admin_db_instrumentacion
