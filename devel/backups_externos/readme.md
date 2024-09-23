@@ -10,6 +10,11 @@ Pasos para configurar tarea programada para backups externos
     * node backup_datbases.js (me fijo que genere la carpeta local-backups y me fijo que los backups se guarden ahí, luego chequeo que cada backup que se esté haciendo se esté registrando en archivo local-backup_feedback.txt, luego paro el script (va a tardar mucho hay que correrlo de madrugada))
     * node store_feedback.js (chequeo que en instrumentación se hayan agregado las rows del archivo de feedback)
 - programo tareas de windows
-    * 22hs -> node get_databases.js
-    * 1 o 2 am -> node backup_datbases.js
-    * 7am -> node store_feedback.js
+    * 22hs -> "traer_lista_DBs_para_backup_externo" (node get_databases.js)
+    * 1 o 2 am -> "realizar_backup_externo" (node backup_datbases.js)
+    * 7am -> "guardar_feedback_de_último_backup_en_db_instrumentacion" (node store_feedback.js)
+
+conf de la tarea programada:
+- programa o script: "C:\Program Files\nodejs\node.exe" (asi con comillas)
+- agregar argumentos (opc): get_databases.js (o el script que corresponda)
+- iniciar en (opc): C:\dev\github\coderun\devel\backups_externos (o path absoluto que corresponda)
