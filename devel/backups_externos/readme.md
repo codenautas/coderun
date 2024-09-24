@@ -1,8 +1,9 @@
+Pasos para configurar tarea programada para backups externos
 
-$ cd c:/dev/github
-$ git clone https://github.com/codenautas/coderun
-$ cd coderun
-$ npm i
+- $ cd c:/dev/github
+- $ git clone https://github.com/codenautas/coderun
+- $ cd coderun
+- $ npm i
 - copio example-local-config.yaml a local-config.yaml y lo lleno con la info de la db remota de instrumentacion
 - pruebo correr las tareas desde la terminal
     * node get_databases.js  (veo que genere archivo local-databases_to_backup.txt y que el contenido sea correcto)
