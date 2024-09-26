@@ -7,11 +7,17 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "match_inst_databases",
+            "program": "${workspaceFolder}/devel/backups_externos/match_inst_databases.js",
+            "outFiles": [
+                "${workspaceFolder}/**/*.js"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "backup_databases",
             "program": "${workspaceFolder}/devel/backups_externos/backup_databases.js",
-            "args": [
-                "earosteguy"
-            ],
             "outFiles": [
                 "${workspaceFolder}/**/*.js"
             ]
@@ -21,9 +27,6 @@
             "request": "launch",
             "name": "store_feedback",
             "program": "${workspaceFolder}/devel/backups_externos/store_feedback.js",
-            "args": [
-                "earosteguy"
-            ],
             "outFiles": [
                 "${workspaceFolder}/**/*.js"
             ]
