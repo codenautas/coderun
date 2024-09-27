@@ -48,7 +48,7 @@ async function getDatabases(engine) {
             FROM instrumentacion.servidores s 
             left join instrumentacion.databases db using (servidor)
             where s.ip = $1 and db.port = $2 
-            AND db.database !~ 'test|prueba|muleto|template|postgres|bkp|bak|capa';
+            AND db.database !~ 'muleto|template|postgres|bkp|bak|capa';
         `,[engine.host, engine.puerto]);
         return res.rows.map(row => row.database);
     } catch (err) {
