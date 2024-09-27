@@ -65,7 +65,6 @@ async function getDatabasesFromEngine(engine) {
         host: engine.host,
         user: localConfig.usuario_backup,
         port: engine.puerto,
-        password: localConfig.password_backup,
         database: 'postgres' // Conectamos a la base de datos 'postgres' para listar las demás
     });
 
@@ -139,7 +138,7 @@ async function compareDatabases() {
             const engineDbs = await getDatabasesFromEngine(engine);
 
             // Comparar y escribir diferencias
-            if (instrumentacionDbs.length || engineDbs.length){
+            if (instrumentacionDbs.length && engineDbs.length){
                 writeDifferences(instrumentacionDbs, engineDbs, engine);
             }
         }
