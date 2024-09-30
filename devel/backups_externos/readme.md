@@ -7,7 +7,7 @@ Pasos para configurar tarea programada para backups externos
 - copio example-local-config.yaml a local-config.yaml y lo lleno con la info de la db remota de instrumentacion
 - pruebo correr las tareas desde la terminal
     * node get_databases.js  (veo que genere archivo local-databases_to_backup.txt y que el contenido sea correcto)
-    * node backup_datbases.js (me fijo que genere la carpeta local-backups y me fijo que los backups se guarden ahí, luego chequeo que cada backup que se esté haciendo se esté registrando en archivo local-backup_feedback.txt, luego paro el script (va a tardar mucho hay que correrlo de madrugada))
+    * node backup_databases.js (me fijo que genere la carpeta local-backups y me fijo que los backups se guarden ahí, luego chequeo que cada backup que se esté haciendo se esté registrando en archivo local-backup_feedback.txt, luego paro el script (va a tardar mucho hay que correrlo de madrugada))
     * node store_feedback.js (chequeo que en instrumentación se hayan agregado las rows del archivo de feedback)
 - programo tareas de windows
     * 22hs -> "traer_lista_DBs_para_backup_externo" (node get_databases.js)
