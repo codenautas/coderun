@@ -22,7 +22,7 @@ async function backupDatabase(engine, dbName, backupDir) {
     console.log(`Iniciando backup de la base de datos: ${dbName} en el engine: ${engine.host}:${engine.port}`);
 
     const dumpFilePath = path.join(backupDir, `${dbName}.sql`);
-    const dumpCommand = `"C:\\Program Files\\PostgreSQL\\16\\bin\\pg_dump.exe" -h ${engine.host} -U ${localConfig.usuario_backup} -F p --blobs --exclude-table-data temp.* --exclude-table-data his.* --exclude-table-data his_. --exclude-table-data mant*.* --exclude-table-data .bitacora --exclude-table-data *.summary --exclude-table-data *.tokens --exclude-table-data temp.* --exclude-table-data operaciones*.* --exclude-schema public -f "${dumpFilePath}" ${dbName}`;
+    const dumpCommand = `"C:\\Program Files\\PostgreSQL\\16\\bin\\pg_dump.exe" -h ${engine.host} -p ${engine.port} -U ${localConfig.usuario_backup} -F p --blobs --exclude-table-data temp.* --exclude-table-data his.* --exclude-table-data his_. --exclude-table-data mant*.* --exclude-table-data .bitacora --exclude-table-data *.summary --exclude-table-data *.tokens --exclude-table-data temp.* --exclude-table-data operaciones*.* --exclude-schema public -f "${dumpFilePath}" ${dbName}`;
 
     return new Promise((resolve, reject) => {
         const dumpProcess = exec(dumpCommand);

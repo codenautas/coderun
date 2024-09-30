@@ -49,7 +49,7 @@ async function getDatabasesFromInstrumentacion(engine) {
             `SELECT database 
             FROM instrumentacion.databases db
             WHERE db.servidor = $1 AND db.port = $2 
-            AND db.database !~ 'test|prueba|muleto|template|postgres|bkp|bak|capa';`,
+            AND db.database !~ 'test|prueba|muleto|template|postgres|bkp|bak|capa|old|hasta';`,
             [engine.servidor, engine.puerto]
         );
         return res.rows.map(row => row.database);
@@ -80,6 +80,8 @@ async function getDatabasesFromEngine(engine) {
             AND datname NOT LIKE '%bkp%' 
             AND datname NOT LIKE '%bak%' 
             AND datname NOT LIKE '%capa%' 
+            AND datname NOT LIKE '%old%' 
+            AND datname NOT LIKE '%hasta%' 
             ORDER BY 1;
         `;
         const res = await engineClient.query(query);
