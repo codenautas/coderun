@@ -75,11 +75,12 @@ async function writeDatabasesToFile() {
             }
         }
         writeStream.end();
-        client.done();
-
+        
         console.log(`Lista de bases de datos guardada en ${backupListPath}`);
     } catch (err) {
         console.error('Error durante la generación de la lista de bases de datos:', err);
+    } finally {
+        client.done();
     }
 }
 
