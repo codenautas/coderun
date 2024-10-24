@@ -31,5 +31,14 @@
                 "${workspaceFolder}/**/*.js"
             ]
         },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "get_databases",
+            "program": "${workspaceFolder}/devel/backups_externos/get_databases.js",
+            "outFiles": [
+                "${workspaceFolder}/**/*.js"
+            ]
+        },
     ]
 }
