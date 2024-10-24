@@ -1,5 +1,5 @@
 const fs = require('fs');
-const { exec } = require('child_process');
+const { spawn } = require('child_process');
 const path = require('path');
 const archiver = require('archiver');
 const yaml = require('js-yaml');
@@ -22,15 +22,34 @@ async function backupDatabase(engine, dbName, backupDir) {
     console.log(`Iniciando backup de la base de datos: ${dbName} en el engine: ${engine.host}:${engine.port}`);
 
     const dumpFilePath = path.join(backupDir, `${dbName}.sql`);
-    const dumpCommand = `"C:\\Program Files\\PostgreSQL\\16\\bin\\pg_dump.exe" -h ${engine.host} -p ${engine.port} -U ${localConfig.usuario_backup} -F p --blobs --exclude-table-data temp.* --exclude-table-data his.* --exclude-table-data his_. --exclude-table-data mant*.* --exclude-table-data .bitacora --exclude-table-data *.summary --exclude-table-data *.tokens --exclude-table-data temp.* --exclude-table-data operaciones*.* --exclude-schema public -f "${dumpFilePath}" ${dbName}`;
+    const dumpArgs = [
+        '-h', pg. engine.host,
+        '-p', engine.port,
+        '-U', localConfig.usuario_backup,
+        '-F', 'p',
+        '--blobs',
+        '--exclude-table-data', 'temp.*',
+        '--exclude-table-data', 'his.*',
+        '--exclude-table-data', 'his_.',
+        '--exclude-table-data', 'mant*.*',
+        '--exclude-table-data', '.bitacora',
+        '--exclude-table-data', '*.summary',
+        '--exclude-table-data', '*.tokens',
+        '--exclude-table-data', 'operaciones*.*',
+        '--exclude-schema', 'public',
+        '-f', dumpFilePath,
+        dbName
+    ];
 
     return new Promise((resolve, reject) => {
-        const dumpProcess = exec(dumpCommand);
+        const dumpProcess = spawn('C:\\Program Files\\PostgreSQL\\16\\bin\\pg_dump.exe', dumpArgs, {
+            stdio: ['ignore', 'inherit', 'pipe'] // Ignora stdin, hereda stdout, captura stderr
+        });
         let stderr = '';
         dumpProcess.stderr.on('data', (data) => {
             stderr += data.toString();
         });
-
+        
         dumpProcess.on('exit', (code) => {
             if (code === 0) {
                 console.log(`Backup de la base de datos ${dbName} completado`);
