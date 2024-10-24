@@ -18,3 +18,8 @@ conf de la tarea programada:
 - programa o script: "C:\Program Files\nodejs\node.exe" (asi con comillas)
 - agregar argumentos (opc): get_databases.js (o el script que corresponda)
 - iniciar en (opc): C:\dev\github\coderun\devel\backups_externos (o path absoluto que corresponda)
+- tildar checkbox "Ejecutar tanto si el usuario inició sesión como si no"
+
+de vez en cuando acceder a 
+https://pro.estadisticaciudad.gob.ar/inst/menu#i=servicios,backups_externos
+para chequear que los backups se estén realizando
