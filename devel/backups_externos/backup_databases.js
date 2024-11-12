@@ -23,7 +23,7 @@ async function backupDatabase(engine, dbName, backupDir) {
 
     const dumpFilePath = path.join(backupDir, `${dbName}.sql`);
     const dumpArgs = [
-        '-h', pg. engine.host,
+        '-h', engine.host,
         '-p', engine.port,
         '-U', localConfig.usuario_backup,
         '-F', 'p',
