@@ -1,5 +1,5 @@
 const path = require('path');
-const { Client } = require('pg');
+const pg = require('pg-promise-strict');
 const fs = require('fs');
 const yaml = require('js-yaml');
 
@@ -16,32 +16,22 @@ function loadConfig() {
 
 // Obtener configuración
 const localConfig = loadConfig();
-const instrumentacionDBClient = new Client({
+const conOpts  = {
     host: localConfig.db_instrumentacion.host,
     user: localConfig.db_instrumentacion.user,
     port: localConfig.db_instrumentacion.port,
     database: localConfig.db_instrumentacion.database,
     options: `--search_path=${localConfig.db_instrumentacion.schema}`,
     password: localConfig.db_instrumentacion.password
-});
+};
+var client=undefined;
 
 async function insertBackupLog(record) {
-    const query = `
-        INSERT INTO backups_externos (database, servidor, port, fecha, exitoso, error, usuario_db_backup, usuario_pc_responsable)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-    `;
-
     try {
-        await instrumentacionDBClient.query(query, [
-            record.database,
-            record.servidor,
-            record.port,
-            record.fecha,
-            record.exitoso,
-            record.error,
-            record.usuario_db_backup,
-            record.usuario_pc_responsable
-        ]);
+        await client.query(`INSERT INTO backups_externos (database, servidor, port, fecha, exitoso, error, usuario_db_backup, usuario_pc_responsable)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`, 
+            [record.database, record.servidor, record.port, record.fecha, record.exitoso, record.error, record.usuario_db_backup, record.usuario_pc_responsable])
+            .execute();
         console.log(`Registro insertado para ${record.database} en ${record.servidor}:${record.port}`);
     } catch (err) {
         console.error(`Error al insertar registro para ${record.database}: ${err.message}`);
@@ -50,7 +40,7 @@ async function insertBackupLog(record) {
 
 async function processBackupFeedback() {
     try {
-        await instrumentacionDBClient.connect();
+        client = await pg.connect(conOpts)
 
         const feedbackFile = path.resolve(__dirname, 'local-backup_feedback.txt');
         if (!fs.existsSync(feedbackFile)) {
@@ -82,7 +72,7 @@ async function processBackupFeedback() {
     } catch (err) {
         console.error('Error durante el proceso de registro:', err.message);
     } finally {
-        await instrumentacionDBClient.end();
+        client.done();
     }
 }
 
