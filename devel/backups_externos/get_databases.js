@@ -27,12 +27,7 @@ var client=undefined;
 
 async function getEnginesToBackup() {
     try {
-        const query = `
-            SELECT m.puerto AS puerto, s.ip as host, s.servidor, s.usuario_backups_externos, m.producto
-            FROM servidores s left join motores m using(servidor)
-            where m.producto ='postgres' and s.usuario_backups_externos = $1
-            order by s.ip, m.puerto;
-        `;
+        const query = `select * from vw_get_engines WHERE usuario_backups_externos = $1`;
         const res = await client.query(query, [localConfig.usuario_inst_responsable_backup]).fetchAll();
         return res.rows;
     } catch (err) {
@@ -43,14 +38,9 @@ async function getEnginesToBackup() {
 
 async function getDatabases(engine) {
     try {
-        
-        const res = await client.query(
-            `SELECT database, s.ip, db.port 
-            FROM instrumentacion.servidores s 
-            left join instrumentacion.databases db using (servidor)
-            where s.ip = $1 and db.port = $2 
-            AND db.database !~ 'muleto|template|postgres|bkp|bak|capa|old|hasta';
-        `,[engine.host, engine.puerto]).fetchAll();
+        const getDBQuery = `SELECT * from vw_get_databases WHERE ip = $1 and port = $2 
+                            AND database !~ 'muleto|template|postgres|bkp|bak|capa|old|hasta'`
+        const res = await client.query(getDBQuery,[engine.host, engine.puerto]).fetchAll();
         // ###################################
         // TODO VOLVER A AGREGAR AL PATRON test|prueba|
         // ###################################
