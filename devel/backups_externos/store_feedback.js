@@ -28,8 +28,7 @@ var client=undefined;
 
 async function insertBackupLog(record) {
     try {
-        await client.query(`INSERT INTO backups_externos (database, servidor, port, fecha, exitoso, error, usuario_db_backup, usuario_pc_responsable)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`, 
+        await client.query(`SELECT fun_insertar_backup_externo($1, $2, $3, $4, $5, $6, $7, $8)`, 
             [record.database, record.servidor, record.port, record.fecha, record.exitoso, record.error, record.usuario_db_backup, record.usuario_pc_responsable])
             .execute();
         console.log(`Registro insertado para ${record.database} en ${record.servidor}:${record.port}`);
