@@ -56,12 +56,14 @@ async function backupDatabase(engine, dbName, backupDir) {
                 resolve({ success: true, dumpFilePath });
             } else {
                 console.error(`Error al realizar el backup de la base de datos ${dbName}`);
-                reject({ success: false, error: `Error al terminar pg_dump: <<${dumpCommand}>>, falló con código <<${code}>>, Detalles: <<${stderr.replace(/[\r\n]+/g, '')}>>` });
+                reject({ success: false, error: `Error al terminar pg_dump: <<${dumpProcess.spawnargs}>>, 
+                    falló con código <<${code}>>, Detalles: <<${stderr.replace(/[\r\n]+/g, '')}>>` });
             }
         });
 
         dumpProcess.on('error', (err) => {
-            reject({ success: false, error: `Error ejecución pg_dump: <<${dumpCommand}>>, falló con error: <<${err.message}>>` });
+            reject({ success: false, error: `Error ejecución pg_dump: <<${dumpProcess.spawnargs}>>, 
+                falló con error: <<${err.message}>>` });
         });
     });
 }
