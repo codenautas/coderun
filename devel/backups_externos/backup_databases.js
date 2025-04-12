@@ -1,4 +1,5 @@
 const fs = require('fs');
+const os = require('os');
 const { spawn } = require('child_process');
 const path = require('path');
 const archiver = require('archiver');
@@ -17,6 +18,24 @@ function loadConfig() {
 
 // Obtener configuración
 const localConfig = loadConfig();
+
+function tieneEntradaPgpass({ host, port, user, database }) {
+    const pgpassPath = path.join(os.homedir(), 'AppData', 'Roaming', 'postgresql', 'pgpass.conf');
+    if (!fs.existsSync(pgpassPath)) return false;
+
+    const lines = fs.readFileSync(pgpassPath, 'utf8').split('\n');
+    return lines.some(line => {
+        const [h, p, db, u, pwd] = line.trim().split(':');
+        if (!h || h.startsWith('#')) return false;
+        return (
+            (h === host || h === '*' || host === 'localhost' && (h === '127.0.0.1' || h === '::1')) &&
+            (p === String(port) || p === '*') &&
+            (db === database || db === '*') &&
+            (u === user || u === '*') &&
+            pwd // que tenga contraseña no vacía
+        );
+    });
+}
 
 async function backupDatabase(engine, dbName, backupDir) {
     console.log(`Iniciando backup de la base de datos: ${dbName} en el engine: ${engine.host}:${engine.port}`);
@@ -40,10 +59,22 @@ async function backupDatabase(engine, dbName, backupDir) {
         '-f', dumpFilePath,
         dbName
     ];
-
+      
     return new Promise((resolve, reject) => {
-        const dumpProcess = spawn('C:\\Program Files\\PostgreSQL\\16\\bin\\pg_dump.exe', dumpArgs, {
-            stdio: ['ignore', 'inherit', 'pipe'] // Ignora stdin, hereda stdout, captura stderr
+        if (!tieneEntradaPgpass({
+            host: engine.host,
+            port: engine.port,
+            user: localConfig.usuario_backup,
+            database: dbName
+        })) {
+            return reject({
+                success: false,
+                error: `No se encontró entrada válida en .pgpass para <<${engine.host}:${engine.port}:${dbName}:${localConfig.usuario_backup}>>`
+            });
+        }
+
+        const dumpProcess = spawn(localConfig.ruta_pg_dump, dumpArgs, {
+            stdio: ['ignore', 'inherit', 'pipe'], // Ignora stdin, hereda stdout, captura stderr
         });
         let stderr = '';
         dumpProcess.stderr.on('data', (data) => {

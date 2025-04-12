@@ -1,5 +1,6 @@
 usuario_backup: usuario_pgpass_para_backups_de_cada_server
 usuario_inst_responsable_backup: usuario_instrumentacion_columna_responsable_backup
+ruta_pg_dump: C:\\Program Files\\PostgreSQL\\17\\bin\\pg_dump.exe
 db_instrumentacion:
   host: ip_db_instrumentacion
   user: usuario_admin_db_instrumentacion
