@@ -1,24 +1,44 @@
 doctype html
 // Uso
-// Configuración del motor
-mixin aclaracion
-  p(bp-style="aclaracion")
+
+///////////// Configuración del motor
+// textos:
+mixin texto
+  p(bp-style="texto")
     block
+mixin mirar
+  div(bp-style="mirar")
+    block
+mixin stop
+  div(bp-style="stop")
+    block
+mixin seccion
+  div(bp-style="seccion")
+    block
+// margenes y formato
+mixin pie
+  div(bp-style="pie")
+    hr
+// comandos:    
 mixin cmd
   pre(bp-style="cmd")
     block
+// parámetros que van a ser reemplazados dentro de los comandos:
 mixin parametro(nombre_variable)
   div(bp-style="parametros")
     span(bp-style="parametro-nombre") #{nombre_variable}
     input(bp-parametro=nombre_variable)
+///////////// Fin de la configuración del motor
 html 
   head
     link(rel="stylesheet" href="./documentador-backend-plus.css")
   body 
     h1 Operaciones sobre servidores de aplicaciones Backend-Plus
-    +aclaracion.
+    +texto.
       Prototipo de conjunto de operaciones sobre servidores de aplicaciones Backend-Plus.
     +parametro("nombre_instancia")
+    +seccion.
+      Lectura del archivo de configuración de la instancia (yaml)
     +cmd.
       sudo ls -cal /opt/insts
 
@@ -28,5 +48,44 @@ html
       export NVM_DIR="/opt/.nvm"
       cd $NVM_DIR
       [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+
       echo $server_base_url $server_port $db_database
+    +mirar.
+      Revisar que la ruta, el puerto y el nombre de la base de datos coincidan. 
+      ➜ Corregir el nombre_instancia si no coincide
+    +seccion.
+      Bajada de la nueva versión.
+    +cmd.
+      cd /opt/npm/$nombre_dir/
+      sudo chown -R $USER .
+      
+      git log -1 >>instalaciones.txt
+      git pull
+    +stop.
+      Si el repositorio es privado el servidor podría pedir que introduzcas tu usuario y token de GitHub.
+    +seccion.
+      Instalación.
+    +cmd.
+      rm -r dist
+      npm ci
+    +stop.
+      Si hay cambios en la base de datos, este es el lugar para impactarlos.
+    +seccion.
+      Finalización de la instalación. Arrancar el servicio.
+    +cmd.
+      sudo chown root /opt/npm
+      sudo chown -R root /opt/nginx.conf
+      sudo chown -R root /opt/services
+      sudo chown -R root /opt/bin
+      sudo chmod +x /opt/bin/coderun/script/run-app.sh
+      sudo chown -R ${server_user} /opt/npm/$nombre_dir
+      sudo systemctl daemon-reload
+      sudo systemctl stop $nombre_dir.service
+      sudo systemctl restart $nombre_dir.service
+    +stop.
+      Verificar que el servicio se ha iniciado correctamente logueándose en el sistema.
+      ➜ Si no arrancara hay que mirar los logs. 💡 Recordar <kbd>Shift</kbd><kbd>G</kbd> va al final del archivo.
+    +cmd.
+      journalctl -u $nombre_dir --since "${ultimos_minutos}
+    +pie.
   script(src="./documentador-backend-plus.js")

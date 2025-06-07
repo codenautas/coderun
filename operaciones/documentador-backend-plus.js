@@ -1,13 +1,17 @@
-function parametroOnBlur(event) {
-    var input = event.target;
-    var value = input.value;
-    var variableName = input.getAttribute("bp-parametro");
+function cambioParametro(variableName, value) {
     if (variableName) {
         var spanElements = document.querySelectorAll("span[bp-variable='" + variableName + "']");
         spanElements.forEach(function (span) {
             span.textContent = value;
         });
     }
+}
+
+function parametroOnBlur(event) {
+    var input = event.target;
+    var value = input.value;
+    var variableName = input.getAttribute("bp-parametro");
+    cambioParametro(variableName, value);
 }
 
 window.onload = function () {
@@ -24,7 +28,6 @@ window.onload = function () {
     })
     var codeElements = document.querySelectorAll("pre")
     codeElements.forEach(function (element) {
-        console.log("x:", element.innerText.split(/(\$(?:\{\w+\}|\w+))/))
         var code = element.innerText.split(/(\$(?:\{\w+\}|\w+))/).map(function (part, i) {
             if (i % 2 === 0) {
                 return document.createTextNode(part); // Texto normal
@@ -40,5 +43,5 @@ window.onload = function () {
         element.innerHTML = "";
         element.append(...code);
     });
-    console.log("Página cargada correctamente");
+    setInterval(() => cambioParametro("ultimos_minutos", new Date(new Date().getTime() - 300000 - new Date().getTimezoneOffset()*60000).toISOString().replace(/T|\..*$/g," ").trim()), 1000)
 };

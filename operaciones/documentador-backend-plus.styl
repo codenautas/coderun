@@ -1,17 +1,40 @@
-[bp-style=aclaracion]
-    font-style italic
-    color #444
+body
+  margin-left 4em
+h1
+  margin-left -1em
+[bp-style=texto]
+  font-style italic
+  color #444
+[bp-style=mirar]
+  font-style italic
+  color #444
+  &::before
+    content "👀 "
+[bp-style=stop]
+  color #800
+  font-weight bold
+  &::before
+    content "✋ "
+[bp-style=seccion]
+  margin-left -1em
+  margin-top 1em
+[bp-style=pie]
+  height 10em
 [bp-style=cmd]
-    font-family consolas, monospace
-    color black
-    background-color #f0f0f0
-    padding: 0.2em
+  font-family consolas, monospace
+  color black
+  background-color #f0f0f0
+  padding 0.2em
+  padding-left 0.5em
+  border-top-left-radius 0.5em
+  border-bottom-left-radius 0.5em
 [bp-style=parametro-nombre]
-    padding-right 0.66em
-[bp-style=parametro-nombre]::before
+  font-family roboto, arial, sans-serif
+  padding-right 0.66em
+  &::before
     content "⌨ "
 [bp-variable]
-    color blue
+  color blue
 [bp-variable][bp-es=parametro]
-    color blueviolet
-    font-weight bold
+  color blueviolet
+  font-weight bold
