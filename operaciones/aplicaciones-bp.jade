@@ -7,16 +7,18 @@ mixin aclaracion
 mixin cmd
   pre(bp-style="cmd")
     block
-mixin parametros(nombre_variable)
-  input
+mixin parametro(nombre_variable)
+  div(bp-style="parametros")
+    span(bp-style="parametro-nombre") #{nombre_variable}
+    input(bp-parametro=nombre_variable)
 html 
   head
     link(rel="stylesheet" href="./documentador-backend-plus.css")
   body 
-    h1 Operaciones sobre servidores de aplicaicones Backend-Plus
+    h1 Operaciones sobre servidores de aplicaciones Backend-Plus
     +aclaracion.
       Prototipo de conjunto de operaciones sobre servidores de aplicaciones Backend-Plus.
-    +parametros("nombre_instancia")
+    +parametro("nombre_instancia")
     +cmd.
       sudo ls -cal /opt/insts
 
