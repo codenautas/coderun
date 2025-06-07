@@ -1,0 +1,30 @@
+doctype html
+// Uso
+// Configuración del motor
+mixin aclaracion
+  p(bp-style="aclaracion")
+    block
+mixin cmd
+  pre(bp-style="cmd")
+    block
+mixin parametros(nombre_variable)
+  input
+html 
+  head
+    link(rel="stylesheet" href="./documentador-backend-plus.css")
+  body 
+    h1 Operaciones sobre servidores de aplicaicones Backend-Plus
+    +aclaracion.
+      Prototipo de conjunto de operaciones sobre servidores de aplicaciones Backend-Plus.
+    +parametros("nombre_instancia")
+    +cmd.
+      sudo ls -cal /opt/insts
+
+      export nombre_dir=${nombre_instancia}
+      source /opt/bin/bash-yaml/script/yaml.sh
+      create_variables /opt/insts/${nombre_dir}.yaml
+      export NVM_DIR="/opt/.nvm"
+      cd $NVM_DIR
+      [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+      echo $server_base_url $server_port $db_database
+  script(src="./documentador-backend-plus.js")
