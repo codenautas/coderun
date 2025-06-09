@@ -26,8 +26,23 @@ mixin cmd
 // parámetros que van a ser reemplazados dentro de los comandos:
 mixin parametro(nombre_variable)
   div(bp-style="parametros")
-    span(bp-style="parametro-nombre") #{nombre_variable}
-    input(bp-parametro=nombre_variable)
+    label(bp-style="parametro-nombre") #{nombre_variable}
+      input(bp-parametro=nombre_variable)
+mixin parametro_sino(nombre_variable)
+  div(bp-style="parametros")
+    label(bp-style="parametro-nombre") #{nombre_variable}
+      input(type="checkbox" bp-parametro=nombre_variable)
+mixin parametro_sino_texto(nombre_variable_sino, nombre_variable_texto, valor_por_defecto)
+  div(bp-style="parametros")
+    label(bp-style="parametro-nombre") #{nombre_variable_sino}
+      input(type="checkbox" bp-parametro=nombre_variable_sino)
+      input(bp-parametro=nombre_variable_texto, value=valor_por_defecto, style="width:30em")
+mixin solo_si(condicion)
+  span(bp-solo-si=condicion)
+    block
+mixin sino
+  span(bp-sino="sino")
+    block
 ///////////// Fin de la configuración del motor
 html 
   head
@@ -37,6 +52,8 @@ html
     +texto.
       Prototipo de conjunto de operaciones sobre servidores de aplicaciones Backend-Plus.
     +parametro("nombre_instancia")
+    +parametro("sql_actualizacion")
+    +parametro_sino_texto("db_en_otro_servidor", "db_otro_servidor", "--host=$db_host --port=$db_port --username=$db_owner ")
     +seccion.
       Lectura del archivo de configuración de la instancia (yaml)
     +cmd.
@@ -68,8 +85,15 @@ html
     +cmd.
       rm -r dist
       npm ci
-    +stop.
-      Si hay cambios en la base de datos, este es el lugar para impactarlos.
+    +solo_si("!sql_actualizacion")
+      +stop.
+        Si hay cambios en la base de datos, este es el lugar para impactarlos.
+    +sino
+      +cmd.
+        sudo -u postgres psql ${db_otro_servidor} -v ON_ERROR_STOP=on --quiet --single-transaction --pset pager=off --file ${sql_actualizacion} $db_database
+      +solo_si("db_en_otro_servidor")
+        +texto.
+          acladardo
     +seccion.
       Finalización de la instalación. Arrancar el servicio.
     +cmd.
