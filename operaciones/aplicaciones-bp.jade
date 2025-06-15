@@ -32,11 +32,14 @@ mixin parametro_sino(nombre_variable)
   div(bp-style="parametros")
     label(bp-style="parametro-nombre") #{nombre_variable}
       input(type="checkbox" bp-parametro=nombre_variable)
-mixin parametro_sino_texto(nombre_variable_sino, nombre_variable_texto, valor_por_defecto)
+mixin parametro_sino_texto(nombre_variable_sino, nombre_variable_texto, valor_por_defecto, valor_unchecked = null)
   div(bp-style="parametros")
     label(bp-style="parametro-nombre") #{nombre_variable_sino}
       input(type="checkbox" bp-parametro=nombre_variable_sino)
-      input(bp-parametro=nombre_variable_texto, value=valor_por_defecto, style="width:30em")
+      if valor_unchecked == null
+        input(bp-parametro=nombre_variable_texto, value=valor_por_defecto, style="width:30em")
+      else
+        input(bp-parametro=nombre_variable_texto, value=valor_por_defecto, style="width:30em", bp-unchecked-value=valor_unchecked)
 mixin solo_si(condicion)
   span(bp-solo-si=condicion)
     block
@@ -53,7 +56,7 @@ html
       Prototipo de conjunto de operaciones sobre servidores de aplicaciones Backend-Plus.
     +parametro("nombre_instancia")
     +parametro("sql_actualizacion")
-    +parametro_sino_texto("db_en_otro_servidor", "db_otro_servidor", "--host=$db_host --port=$db_port --username=$db_owner ")
+    +parametro_sino_texto("db_en_otro_servidor", "db_otro_servidor", "--host=$db_host --port=$db_port --username=$db_owner ", "")
     +seccion.
       Lectura del archivo de configuración de la instancia (yaml)
     +cmd.

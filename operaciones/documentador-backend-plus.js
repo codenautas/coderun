@@ -30,16 +30,19 @@ function cambioParametro(variableName, value) {
 }
 
 function tomarValorDelInput(input) {
-    var value = input.disabled ? null : input.type == "checkbox" ? input.checked : input.value 
+    if (input.disalbed) {
+        
+    }
+    var value = input.disabled ? null : input.type == "checkbox" ? input.checked : (input.value || null)
     var variableName = input.getAttribute("bp-parametro");
     cambioParametro(variableName, value);
-    if (input.type == "checkbox" && input.nextElementSibling.getAttribute('bp-parameter')) {
+    if (input.type == "checkbox" && input.nextElementSibling.getAttribute('bp-parametro')) {
         input.nextElementSibling.disabled = !input.checked
-        if (!input.checked) {
+        if (input.checked) {
             tomarValorDelInput(input.nextElementSibling)
         } else {
-            var variableAsociada = input.nextElementSibling.getAttribute('bp-parameter')
-            cambioParametro(variableAsociada, null);
+            var variableAsociada = input.nextElementSibling.getAttribute('bp-parametro')
+            cambioParametro(variableAsociada, input.hasAttribute("bp-unchecked-value") ? input.getAttribute("bp-unchecked-value") : null );
         }
     }
 }
@@ -69,7 +72,12 @@ function interpolarParametros(element){
         return newNodes;
     } else {
         var code = []
-        element.childNodes.forEach( e => code.push(...interpolarParametros(e)));
+        element.childNodes.forEach( 
+            /** @param {HTMLElement|Text} e */
+            function(e) {
+                code.push(...interpolarParametros(e));
+            }
+        );
         element.innerHTML = "";
         element.append(...code);
         return [element];
@@ -83,6 +91,7 @@ window.onload = function () {
         var parametro = element.getAttribute("bp-parametro");
         if (parametro) {
             parametros[parametro] = {};
+            // @ts-expect-error cualquiera podría ser el elemento y podría no tener type (no me jode)
             if (element.type == "checkbox") {
                 element.onchange = parametroOnChange;
             } else {
@@ -102,4 +111,7 @@ window.onload = function () {
         }
     })
     setInterval(() => cambioParametro("ultimos_minutos", new Date(new Date().getTime() - 300000 - new Date().getTimezoneOffset()*60000).toISOString().replace(/T|\..*$/g," ").trim()), 1000)
+    paramElements.forEach(function (element) {
+        tomarValorDelInput(element);        
+    });
 };
