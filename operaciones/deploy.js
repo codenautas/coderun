@@ -29,8 +29,8 @@ async function run(){
         await fs.mkdir('./dist', {recursive: true});
         console.log('deploying');
         console.log(await Promise.all([
-            {fun: deployPug      , file:'index.jade'             },
-            {fun: deployPug      , file:'aplicaciones-bp.jade'             },
+            {fun: deployPug      , file:'index.jade'                       },
+            {fun: deployPug      , file:'mantenimiento-aplicaciones.jade'  },
             {fun: deployStylus   , file:'documentador-backend-plus.styl'   },
             {fun: copyFile       , file:'documentador-backend-plus.js'     }
         ].map(async ({fun, file}, i)=>{
