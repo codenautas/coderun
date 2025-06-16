@@ -64,3 +64,4 @@ package-lock.json
 
 local-*
 *-local.*
+dist
