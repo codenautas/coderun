@@ -6,6 +6,6 @@
         "stylus": "^0.64.0"
     },
     "scripts": {
-        "deploy": "mkdir dist && npx stylus . --out ./dist && node deploy &&"
+        "deploy": "node deploy"
     }
 }
