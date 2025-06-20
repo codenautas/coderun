@@ -82,14 +82,11 @@ html
     +cmd.
       cd /opt/npm/$nombre_dir/
       sudo chown -R $USER .
-    +solo_si("!es_repo_publico")
-      +stop.
-        Introducir la contraseña o token del usuario.
-    +cmd.
       git log -1 >>instalaciones.txt
       git pull
-    +stop.
-      Si el repositorio es privado el servidor podría pedir que introduzcas tu usuario y token de GitHub.
+    +solo_si("!es_repo_publico")
+      +stop.
+        Si el repositorio es privado el servidor podría pedir que introduzcas tu usuario y token de GitHub.
     +seccion.
       Instalación.
     +cmd.
