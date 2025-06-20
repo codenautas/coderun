@@ -84,7 +84,36 @@ function interpolarParametros(element){
     }
 }
 
-window.onload = function () {
+/** @param {HTMLElement|Text} element */
+function interpolarTextos(element){
+    if (element instanceof Text) {
+        var newNodes = element.textContent.split(/((?:(?:https?|ftp):\/\/)(?:[^\s\/$.?#]+\.)+[^\s\/$.?#]+(?:\/[^\s]*)?)/).map(function (part, i) {
+            if (i % 2 === 0) {
+                return document.createTextNode(part); // Texto normal
+            } else {
+                var span = document.createElement("a");
+                span.href = part
+                span.textContent = part;
+                span.setAttribute("bp-type", "link");
+                return span;
+            }
+        });
+        return newNodes;
+    } else {
+        var code = []
+        element.childNodes.forEach( 
+            /** @param {HTMLElement|Text} e */
+            function(e) {
+                code.push(...interpolarTextos(e));
+            }
+        );
+        element.innerHTML = "";
+        element.append(...code);
+        return [element];
+    }
+}
+
+function preprocesarContenido() {
     /** @type {NodeListOf<HTMLElement>} */
     var paramElements = document.querySelectorAll("[bp-parametro]")
     paramElements.forEach(function (element) {
@@ -102,6 +131,9 @@ window.onload = function () {
     var codeElements = document.querySelectorAll("pre")
     codeElements.forEach(interpolarParametros)
     /** @type {NodeListOf<HTMLElement>} */
+    var textElements = document.querySelectorAll("[bp-type=texto]")
+    textElements.forEach(interpolarTextos)
+    /** @type {NodeListOf<HTMLElement>} */
     var soloSiElements = document.querySelectorAll("[bp-solo-si]");
     soloSiElements.forEach(function (element) {
         var condition = element.getAttribute("bp-solo-si");
@@ -114,4 +146,8 @@ window.onload = function () {
     paramElements.forEach(function (element) {
         tomarValorDelInput(element);        
     });
+}
+
+window.onload = function () {
+    preprocesarContenido();
 };

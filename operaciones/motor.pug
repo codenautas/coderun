@@ -1,0 +1,53 @@
+
+///////////// Configuración del motor
+// textos:
+mixin texto
+  p(bp-style="texto", bp-type="texto")
+    block
+mixin mirar
+  div(bp-style="mirar", bp-type="texto")
+    block
+mixin stop
+  div(bp-style="stop", bp-type="texto")
+    block
+mixin seccion
+  div(bp-style="seccion")
+    block
+// margenes y formato
+mixin pie
+  div(bp-style="pie", bp-type="texto")
+    hr
+// comandos:    
+mixin cmd
+  pre(bp-style="cmd")
+    block
+// parámetros que van a ser reemplazados dentro de los comandos:
+mixin parametro(nombre_variable)
+  div(bp-style="parametros")
+    label(bp-style="parametro-nombre") #{nombre_variable}
+      input(bp-parametro=nombre_variable)
+mixin parametro_sino(nombre_variable)
+  div(bp-style="parametros")
+    label(bp-style="parametro-nombre") #{nombre_variable}
+      input(type="checkbox" bp-parametro=nombre_variable)
+mixin parametro_sino_texto(nombre_variable_sino, nombre_variable_texto, valor_por_defecto, valor_unchecked = null)
+  div(bp-style="parametros")
+    label(bp-style="parametro-nombre") #{nombre_variable_sino}
+      input(type="checkbox" bp-parametro=nombre_variable_sino)
+      if valor_unchecked == null
+        input(bp-parametro=nombre_variable_texto, value=valor_por_defecto, style="width:30em")
+      else
+        input(bp-parametro=nombre_variable_texto, value=valor_por_defecto, style="width:30em", bp-unchecked-value=valor_unchecked)
+mixin solo_si(condicion)
+  span(bp-solo-si=condicion)
+    block
+mixin sino
+  span(bp-sino="sino")
+    block
+mixin a(href)
+  a(href=href)
+    if block
+      block
+    else
+      | #{href}
+///////////// Fin de la configuración del motor

@@ -1,107 +1,23 @@
 doctype html
-// Uso
-
-///////////// Configuración del motor
-// textos:
-mixin texto
-  p(bp-style="texto")
-    block
-mixin mirar
-  div(bp-style="mirar")
-    block
-mixin stop
-  div(bp-style="stop")
-    block
-mixin seccion
-  div(bp-style="seccion")
-    block
-// margenes y formato
-mixin pie
-  div(bp-style="pie")
-    hr
-// comandos:    
-mixin cmd
-  pre(bp-style="cmd")
-    block
-// parámetros que van a ser reemplazados dentro de los comandos:
-mixin parametro(nombre_variable)
-  div(bp-style="parametros")
-    label(bp-style="parametro-nombre") #{nombre_variable}
-      input(bp-parametro=nombre_variable)
-mixin parametro_sino(nombre_variable)
-  div(bp-style="parametros")
-    label(bp-style="parametro-nombre") #{nombre_variable}
-      input(type="checkbox" bp-parametro=nombre_variable)
-mixin parametro_sino_texto(nombre_variable_sino, nombre_variable_texto, valor_por_defecto, valor_unchecked = null)
-  div(bp-style="parametros")
-    label(bp-style="parametro-nombre") #{nombre_variable_sino}
-      input(type="checkbox" bp-parametro=nombre_variable_sino)
-      if valor_unchecked == null
-        input(bp-parametro=nombre_variable_texto, value=valor_por_defecto, style="width:30em")
-      else
-        input(bp-parametro=nombre_variable_texto, value=valor_por_defecto, style="width:30em", bp-unchecked-value=valor_unchecked)
-mixin solo_si(condicion)
-  span(bp-solo-si=condicion)
-    block
-mixin sino
-  span(bp-sino="sino")
-    block
-///////////// Fin de la configuración del motor
+include ./motor.pug
 html 
   head
     link(rel="stylesheet" href="./documentador-backend-plus.css")
+    script(src="./documentador-backend-plus.js")
   body 
     h1 Comandos locales durante el desarrollo en ambientes Windows
     +seccion.
-      Compilar generar la base y correr los casos de prueba en un solo comando
+      Preparación
     +texto.
-      Antes de empezar hay que tener clonado https://github.com/codenautas/coderun y en el path la carpeta `coderun/devel` 
-      (para poder ejecutar `run-sql.bat`)
+      Antes de empezar hay que tener clonado https://github.com/codenautas/coderun y en el path la carpeta #[code coderun/devel]
+      (para poder ejecutar `run-sql.bat`). 
+    +texto.
+      Una alternativa es tener una carpeta #[code /bin] donde tener el archivo #[code local-path.bat]
+      similar a https://github.com/codenautas/coderun/blob/master/devel/example-local-path.bat
+      En ese caso se arranca así:
+    +cmd.
+      \bin\local-path.bat
+    +seccion.
+      Compilar generar la base y correr los casos de prueba en un solo comando
     +cmd.
       call npm run prepare && call npm start -- --dump-db && call run-sql create-schema && call npm test
-    +mirar.
-      Revisar que la ruta, el puerto y el nombre de la base de datos coincidan. 
-      ➜ Corregir el nombre_instancia si no coincide
-    +seccion.
-      Bajada de la nueva versión.
-    +cmd.
-      cd /opt/npm/$nombre_dir/
-      sudo chown -R $USER .
-      
-      git log -1 >>instalaciones.txt
-      git pull
-    +stop.
-      Si el repositorio es privado el servidor podría pedir que introduzcas tu usuario y token de GitHub.
-    +seccion.
-      Instalación.
-    +cmd.
-      rm -r dist
-      npm ci
-    +solo_si("!sql_actualizacion")
-      +stop.
-        Si hay cambios en la base de datos, este es el lugar para impactarlos.
-    +sino
-      +cmd.
-        sudo -u postgres psql ${db_otro_servidor} -v ON_ERROR_STOP=on --quiet --single-transaction --pset pager=off --file ${sql_actualizacion} $db_database
-      +solo_si("db_en_otro_servidor")
-        +texto.
-          acladardo
-    +seccion.
-      Finalización de la instalación. Arrancar el servicio.
-    +cmd.
-      sudo chown root /opt/npm
-      sudo chown -R root /opt/nginx.conf
-      sudo chown -R root /opt/services
-      sudo chown -R root /opt/bin
-      sudo chmod +x /opt/bin/coderun/script/run-app.sh
-      sudo chown -R ${server_user} /opt/npm/$nombre_dir
-      sudo systemctl daemon-reload
-      sudo systemctl stop $nombre_dir.service
-      sudo systemctl restart $nombre_dir.service
-    +stop.
-      Verificar que el servicio se ha iniciado correctamente logueándose en el sistema.
-      ➜ Si no arrancara hay que mirar los logs. 💡 Recordar <kbd>Shift</kbd><kbd>G</kbd> va al final del archivo.
-    +cmd.
-      journalctl -u $nombre_dir --since "${ultimos_minutos}
-    +pie.
-  script(src="./documentador-backend-plus.js")

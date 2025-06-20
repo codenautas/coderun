@@ -2,11 +2,28 @@ const pug = require('pug')
 var stylus = require('stylus')
 const fs = require('fs/promises')
 
+const MOTOR_PREFIJO = `
+///////////// Configuración del motor
+`
+
+const MOTOR_SUFIJO = `
+///////////// Fin de la configuración del motor
+`
+
+async function xdeployPug(motorPug){
+    return async function deployPug(filename){
+        const outfilename = `dist/${filename.replace(/\.(jade|pug)$/,'')}.html`
+        const content = pug.renderFile(filename,{})
+        await fs.writeFile(outfilename, content, 'utf8')
+    }
+}
+
 async function deployPug(filename){
     const outfilename = `dist/${filename.replace(/\.(jade|pug)$/,'')}.html`
     const content = pug.renderFile(filename,{})
     await fs.writeFile(outfilename, content, 'utf8')
 }
+
 
 async function deployStylus(filename){
     const outfilename = `dist/${filename.replace(/\.(styl)$/,'')}.css`
@@ -31,6 +48,7 @@ async function run(){
         console.log(await Promise.all([
             {fun: deployPug      , file:'index.jade'                       },
             {fun: deployPug      , file:'mantenimiento-aplicaciones.jade'  },
+            {fun: deployPug      , file:'comandos-locales.jade'            },
             {fun: deployStylus   , file:'documentador-backend-plus.styl'   },
             {fun: copyFile       , file:'documentador-backend-plus.js'     }
         ].map(async ({fun, file}, i)=>{
