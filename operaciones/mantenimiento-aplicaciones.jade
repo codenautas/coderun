@@ -55,13 +55,17 @@ html
     +texto.
       Prototipo de conjunto de operaciones sobre servidores de aplicaciones Backend-Plus.
     +parametro("nombre_instancia")
+    +parametro_sino("es_repo_publico")
     +parametro("sql_actualizacion")
     +parametro_sino_texto("db_en_otro_servidor", "db_otro_servidor", "--host=$db_host --port=$db_port --username=$db_owner ", "")
     +seccion.
       Lectura del archivo de configuración de la instancia (yaml)
     +cmd.
       sudo ls -cal /opt/insts
-
+    +mirar.
+      Revisar que la ruta, el puerto y el nombre de la base de datos coincidan. 
+      ➜ Corregir el nombre_instancia si no coincide
+    +cmd.
       export nombre_dir=${nombre_instancia}
       source /opt/bin/bash-yaml/script/yaml.sh
       create_variables /opt/insts/${nombre_dir}.yaml
@@ -78,7 +82,10 @@ html
     +cmd.
       cd /opt/npm/$nombre_dir/
       sudo chown -R $USER .
-      
+    +solo_si("!es_repo_publico")
+      +stop.
+        Introducir la contraseña o token del usuario.
+    +cmd.
       git log -1 >>instalaciones.txt
       git pull
     +stop.
