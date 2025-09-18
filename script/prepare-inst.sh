@@ -30,8 +30,8 @@ else
   echo "# git section"
   read -p "https://[github].com:" git_host
   git_host=${git_host:-github}
-  read -p "https://$git_host.com/[codenautas]:" git_group
-  git_group=${git_group:-codenautas}
+  read -p "https://$git_host.com/[es-ba]:" git_group
+  git_group=${git_group:-es-ba}
   read -p "https://$git_host.com/$git_group/[$inst_name]:" git_project
   git_project=${git_project:-$inst_name}
 
