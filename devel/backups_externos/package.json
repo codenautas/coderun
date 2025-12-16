@@ -6,6 +6,7 @@
     "script"
   ],
   "dependencies": {
+    "inquirer": "~12.10.0",
     "archiver": "^7.0.1",
     "pg-promise-strict": "^1.4.1",
     "js-yaml": "^4.1.0"
