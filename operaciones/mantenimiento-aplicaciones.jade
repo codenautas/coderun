@@ -1,0 +1,75 @@
+doctype html
+include ./motor.pug
+html 
+  head
+    link(rel="stylesheet" href="./documentador-backend-plus.css")
+    script(src="./documentador-backend-plus.js")
+  body 
+    h1 Operaciones sobre servidores de aplicaciones Backend-Plus
+    +texto.
+      Prototipo de conjunto de operaciones sobre servidores de aplicaciones Backend-Plus.
+    +parametro("nombre_instancia")
+    +parametro_sino("es_repo_publico")
+    +parametro("sql_actualizacion")
+    +parametro_sino_texto("db_en_otro_servidor", "db_otro_servidor", "--host=$db_host --port=$db_port --username=$db_owner ", "")
+    +seccion.
+      Lectura del archivo de configuración de la instancia (yaml)
+    +cmd.
+      sudo ls -cal /opt/insts
+    +mirar.
+      Revisar que la ruta, el puerto y el nombre de la base de datos coincidan. 
+      ➜ Corregir el nombre_instancia si no coincide
+    +cmd.
+      export nombre_dir=${nombre_instancia}
+      source /opt/bin/bash-yaml/script/yaml.sh
+      create_variables /opt/insts/${nombre_dir}.yaml
+      export NVM_DIR="/opt/.nvm"
+      cd $NVM_DIR
+      [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+
+      echo $server_base_url $server_port $db_database
+    +mirar.
+      Revisar que la ruta, el puerto y el nombre de la base de datos coincidan. 
+      ➜ Corregir el nombre_instancia si no coincide
+    +seccion.
+      Bajada de la nueva versión.
+    +cmd.
+      cd /opt/npm/$nombre_dir/
+      sudo chown -R $USER .
+      git log -1 >>instalaciones.txt
+      git pull
+    +solo_si("!es_repo_publico")
+      +stop.
+        Si el repositorio es privado el servidor podría pedir que introduzcas tu usuario y token de GitHub.
+    +seccion.
+      Instalación.
+    +cmd.
+      rm -r dist
+      npm ci
+    +solo_si("!sql_actualizacion")
+      +stop.
+        Si hay cambios en la base de datos, este es el lugar para impactarlos.
+    +sino
+      +cmd.
+        sudo -u postgres psql ${db_otro_servidor} -v ON_ERROR_STOP=on --quiet --single-transaction --pset pager=off --file ${sql_actualizacion} $db_database
+      +solo_si("db_en_otro_servidor")
+        +texto.
+          acladardo
+    +seccion.
+      Finalización de la instalación. Arrancar el servicio.
+    +cmd.
+      sudo chown root /opt/npm
+      sudo chown -R root /opt/nginx.conf
+      sudo chown -R root /opt/services
+      sudo chown -R root /opt/bin
+      sudo chmod +x /opt/bin/coderun/script/run-app.sh
+      sudo chown -R ${server_user} /opt/npm/$nombre_dir
+      sudo systemctl daemon-reload
+      sudo systemctl stop $nombre_dir.service
+      sudo systemctl restart $nombre_dir.service
+    +stop.
+      Verificar que el servicio se ha iniciado correctamente logueándose en el sistema.
+      ➜ Si no arrancara hay que mirar los logs. 💡 Recordar <kbd>Shift</kbd><kbd>G</kbd> va al final del archivo.
+    +cmd.
+      journalctl -u $nombre_dir --since "${ultimos_minutos}
+    +pie.

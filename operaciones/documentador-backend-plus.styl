@@ -1,0 +1,58 @@
+body
+  margin-left 4em
+h1
+  margin-left -1em
+[bp-style=texto]
+  font-style italic
+  color #444
+[bp-style=mirar]
+  font-style italic
+  color #444
+  &::before
+    content "👀 "
+[bp-style=stop]
+  color #800
+  font-weight bold
+  &::before
+    content "✋ "
+[bp-style=seccion]
+  margin-left -1em
+  margin-top 1em
+[bp-style=pie]
+  height 10em
+[bp-type=link]
+  font-style normal
+  font-family roboto, arial, sans-serif
+  color #555
+code
+  border-radius 0.5em
+  padding-right 0.5em
+[bp-style=cmd],code
+  font-family consolas, monospace
+  font-style normal
+  color black
+  background-color #f0f0f0
+  padding-top 0.2em
+  padding-bottom 0.2em
+  padding-left 0.5em
+  border-top-left-radius 0.5em
+  border-bottom-left-radius 0.5em
+[bp-style=parametro-nombre]
+  font-family roboto, arial, sans-serif
+  padding-right 0.66em
+  &::before
+    content "⌨ "
+[bp-variable]
+  color blue
+[bp-variable][bp-es=parametro]
+  color blueviolet
+  font-weight bold
+kbd
+  display inline-block
+  text-align center
+  border 0.5px solid #ccc
+  padding 0.1em 0.2em
+  min-width 1.5em
+  margin 0 0.2em
+  border-radius 0.2em
+  box-shadow 0 1px 0 0.5px #ccc;

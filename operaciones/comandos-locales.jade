@@ -1,0 +1,23 @@
+doctype html
+include ./motor.pug
+html 
+  head
+    link(rel="stylesheet" href="./documentador-backend-plus.css")
+    script(src="./documentador-backend-plus.js")
+  body 
+    h1 Comandos locales durante el desarrollo en ambientes Windows
+    +seccion.
+      Preparación
+    +texto.
+      Antes de empezar hay que tener clonado https://github.com/codenautas/coderun y en el path la carpeta #[code coderun/devel]
+      (para poder ejecutar `run-sql.bat`). 
+    +texto.
+      Una alternativa es tener una carpeta #[code /bin] donde tener el archivo #[code local-path.bat]
+      similar a https://github.com/codenautas/coderun/blob/master/devel/example-local-path.bat
+      En ese caso se arranca así:
+    +cmd.
+      \bin\local-path.bat
+    +seccion.
+      Compilar generar la base y correr los casos de prueba en un solo comando
+    +cmd.
+      call npm run prepare && call npm start -- --dump-db && call run-sql create-schema && call npm test

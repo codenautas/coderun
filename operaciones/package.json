@@ -1,0 +1,11 @@
+{
+    "name": "devops-plus",
+    "descrition": "operaciones para backend-plus",
+    "devDependencies": {
+        "pug": "^3.0.3",
+        "stylus": "^0.64.0"
+    },
+    "scripts": {
+        "deploy": "node deploy"
+    }
+}

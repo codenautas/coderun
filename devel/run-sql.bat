@@ -34,6 +34,7 @@ if "%1" == "path" (
       echo falta el nombre de la base de datos y no se pudo leer de local-config.yaml
       echo se la puede especificar como parametro, por ejemplo
       echo %0 %1 esta_db
+      exit /b 1
     )
   ) else (
     if "%1" == "dump4install" (
@@ -50,7 +51,7 @@ if "%1" == "path" (
 )
 if errorlevel 9009 (
   echo No se encontro el psql. Probar agregarlo al path con:
-  echo %0 path "C:\Program Files\PostgreSQL\12\bin"
+  echo %0 path "C:\Program Files\PostgreSQL\17\bin"
 ) else if errorlevel 1 (
   if "%PGPORT%" == "" (
     echo Quizas haya que agregar el puerto, el usuario o la clave
@@ -59,4 +60,5 @@ if errorlevel 9009 (
     echo set PGPASSWORD=admin
   )
   echo err-code: %errorlevel%
+  exit /b 1
 )
