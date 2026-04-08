@@ -11,6 +11,9 @@
     "pg-promise-strict": "^1.4.1",
     "js-yaml": "^4.1.0"
   },
+  "scripts": {
+    "all": "node run-all.js"
+  },
   "repository": "codenautas/coderun",
   "author": "Eugenio Arosteguy",
   "license": "MIT"
