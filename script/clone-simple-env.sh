@@ -1,54 +1,62 @@
 #!/bin/bash
 
-echo "=== Clonador de Entornos YAML (App + Pass DB) ==="
+# --- CONFIGURACIÓN ---
+# Usamos path absoluto solo para la base, el resto es simple
+PATH_CONFIGS="/opt/insts"
 
-# 1. Nombres de operativos
-read -p "Nombre operativo ORIGEN (ej. prrepsic252): " ORIGEN_FULL
-read -p "Nombre operativo DESTINO (ej. prrepsic261): " DESTINO_FULL
+echo "=== Clonador de Configuraciones YAML ==="
 
-FILE_ORIGEN="${ORIGEN_FULL}.yaml"
-FILE_DESTINO="${DESTINO_FULL}.yaml"
+# 1. Identificación de archivos
+read -p "Nombre de la instancia ORIGEN (ej. prrepsic252): " INSTANCIA_ORIGEN
+read -p "Nombre de la instancia DESTINO (ej. prrepsic261): " INSTANCIA_DESTINO
 
-if [ ! -f "$FILE_ORIGEN" ]; then
-    echo "Error: No existe el archivo $FILE_ORIGEN"
-    exit 1
+# Validación simple para no cerrar la consola si falta un dato
+if [[ -z "$INSTANCIA_ORIGEN" || -z "$INSTANCIA_DESTINO" ]]; then
+    echo "❌ Error: Debes ingresar ambos nombres."
+    return 1 2>/dev/null || exit 1
 fi
 
-# 2. Extraer números para base de datos y paths
-ORIGEN_NUM=$(echo $ORIGEN_FULL | grep -oE '[0-9]+')
-DESTINO_NUM=$(echo $DESTINO_FULL | grep -oE '[0-9]+')
+FILE_ORIGEN="${PATH_CONFIGS}/${INSTANCIA_ORIGEN}.yaml"
+FILE_DESTINO="${PATH_CONFIGS}/${INSTANCIA_DESTINO}.yaml"
 
-# 3. Pedir datos técnicos
-read -p "Nuevo Puerto APP: " PUERTO_APP
-read -p "Nueva Password BBDD: " PASS_DB
+if [ ! -f "$FILE_ORIGEN" ]; then
+    echo "❌ Error: No existe el archivo $FILE_ORIGEN"
+    return 1 2>/dev/null || exit 1
+fi
 
-echo -e "\n--- Resumen de Operación ---"
-echo "Archivo:  $FILE_ORIGEN  -->  $FILE_DESTINO"
-echo "ID Num:   $ORIGEN_NUM  -->  $DESTINO_NUM"
-echo "Puerto:   $PUERTO_APP"
-echo "----------------------------"
+# 2. Extracción de números (para bases de datos, etc)
+NUM_ORIGEN=$(echo "$INSTANCIA_ORIGEN" | grep -oP '\d+' | head -n 1 || echo "")
+NUM_DESTINO=$(echo "$INSTANCIA_DESTINO" | grep -oP '\d+' | head -n 1 || echo "")
+
+# 3. Datos nuevos
+read -p "Nuevo Puerto: " NUEVO_PUERTO
+read -p "Nueva Password BBDD: " NUEVA_PASS
+
+echo -e "\n--- Resumen ---"
+echo "Origen: $INSTANCIA_ORIGEN -> Destino: $INSTANCIA_DESTINO"
+echo "Puerto: $NUEVO_PUERTO"
 
 read -p "¿Proceder? (s/n): " CONFIRMAR
 
 if [[ "$CONFIRMAR" =~ ^[Ss]$ ]]; then
-    # Copia física del archivo
-    cp "$FILE_ORIGEN" "$FILE_DESTINO"
+    # Copia y permisos
+    sudo cp "$FILE_ORIGEN" "$FILE_DESTINO"
+    sudo chown "$USER" "$FILE_DESTINO"
 
-    # A. Reemplazo del nombre completo (ej: prrepsic252 -> prrepsic261)
-    sed -i "s/${ORIGEN_FULL}/${DESTINO_FULL}/g" "$FILE_DESTINO"
+    # Reemplazos
+    # Reemplazo del nombre completo
+    sed -i "s|${INSTANCIA_ORIGEN}|${INSTANCIA_DESTINO}|g" "$FILE_DESTINO"
 
-    # B. Reemplazo de la parte numérica (para base de datos y paths internos)
-    if [ ! -z "$ORIGEN_NUM" ] && [ ! -z "$DESTINO_NUM" ]; then
-        sed -i "s/${ORIGEN_NUM}/${DESTINO_NUM}/g" "$FILE_DESTINO"
+    # Reemplazo de los números (si existen)
+    if [ -n "$NUM_ORIGEN" ] && [ -n "$NUM_DESTINO" ]; then
+        sed -i "s|${NUM_ORIGEN}|${NUM_DESTINO}|g" "$FILE_DESTINO"
     fi
 
-    # C. Reemplazo del puerto (específicamente en la sección server)
-    sed -i "/^server:/,/^[^ ]/ s/port: .*/port: ${PUERTO_APP}/" "$FILE_DESTINO"
+    # Reemplazo específico de puerto y password
+    sed -i "/^server:/,/^[^ ]/ s|\(port: \).*|\1${NUEVO_PUERTO}|" "$FILE_DESTINO"
+    sed -i "/^db:/,/^[^ ]/ s|\(password: \).*|\1${NUEVA_PASS}|" "$FILE_DESTINO"
 
-    # D. Reemplazo de la contraseña (en la sección db)
-    sed -i "/^db:/,/^[^ ]/ s/password: .*/password: ${PASS_DB}/" "$FILE_DESTINO"
-
-    echo -e "\n✅ Archivo '$FILE_DESTINO' generado con éxito."
+    echo -e "\n✅ Listo: $FILE_DESTINO generado."
 else
     echo -e "\n❌ Operación cancelada."
 fi
