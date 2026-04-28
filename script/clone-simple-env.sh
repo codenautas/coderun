@@ -1,4 +1,5 @@
 #!/bin/bash
+
 # --- CONFIGURACIÓN ---
 PATH_CONFIGS="/opt/insts"
 
@@ -8,7 +9,6 @@ echo "=== Clonador de Configuraciones YAML ==="
 read -p "Nombre de la instancia ORIGEN (ej. prrepsic252): " INSTANCIA_ORIGEN
 read -p "Nombre de la instancia DESTINO (ej. prrepsic261): " INSTANCIA_DESTINO
 
-# Si el usuario no pone nada, salimos sin cerrar la consola
 if [[ -z "$INSTANCIA_ORIGEN" || -z "$INSTANCIA_DESTINO" ]]; then
     echo "❌ Error: Debes ingresar ambos nombres."
     return 1 2>/dev/null || exit 1
@@ -17,17 +17,9 @@ fi
 FILE_ORIGEN="${PATH_CONFIGS}/${INSTANCIA_ORIGEN}.yaml"
 FILE_DESTINO="${PATH_CONFIGS}/${INSTANCIA_DESTINO}.yaml"
 
-# Verificar que el origen exista
 if [ ! -f "$FILE_ORIGEN" ]; then
     echo "❌ Error: No se encuentra el archivo origen en $FILE_ORIGEN"
     return 1 2>/dev/null || exit 1
-fi
-
-# Verificar que el destino no exista (para no pisar por error)
-if [ -f "$FILE_DESTINO" ]; then
-    echo "⚠️ El archivo destino ya existe en $FILE_DESTINO"
-    read -p "¿Deseas sobrescribirlo? (s/n): " PISAR
-    [[ "$PISAR" =~ ^[Ss]$ ]] || { echo "Abortado."; return 0 2>/dev/null || exit 0; }
 fi
 
 # 2. Extracción de números
@@ -47,11 +39,9 @@ echo "----------------------------"
 read -p "¿Generar nueva configuración? (s/n): " CONFIRMAR
 
 if [[ "$CONFIRMAR" =~ ^[Ss]$ ]]; then
-    # Copia inicial
     sudo cp "$FILE_ORIGEN" "$FILE_DESTINO"
     sudo chown "$USER" "$FILE_DESTINO"
 
-    # Reemplazos con separador "|" para evitar problemas con paths
     sed -i "s|${INSTANCIA_ORIGEN}|${INSTANCIA_DESTINO}|g" "$FILE_DESTINO"
 
     if [ -n "$NUM_ORIGEN" ] && [ -n "$NUM_DESTINO" ]; then
