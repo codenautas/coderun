@@ -1,6 +1,4 @@
 #!/bin/bash
-set -e 
-
 # --- CONFIGURACIÓN ---
 PATH_CONFIGS="/opt/insts"
 
@@ -10,17 +8,29 @@ echo "=== Clonador de Configuraciones YAML ==="
 read -p "Nombre de la instancia ORIGEN (ej. prrepsic252): " INSTANCIA_ORIGEN
 read -p "Nombre de la instancia DESTINO (ej. prrepsic261): " INSTANCIA_DESTINO
 
+# Si el usuario no pone nada, salimos sin cerrar la consola
+if [[ -z "$INSTANCIA_ORIGEN" || -z "$INSTANCIA_DESTINO" ]]; then
+    echo "❌ Error: Debes ingresar ambos nombres."
+    return 1 2>/dev/null || exit 1
+fi
+
 FILE_ORIGEN="${PATH_CONFIGS}/${INSTANCIA_ORIGEN}.yaml"
 FILE_DESTINO="${PATH_CONFIGS}/${INSTANCIA_DESTINO}.yaml"
 
 # Verificar que el origen exista
 if [ ! -f "$FILE_ORIGEN" ]; then
     echo "❌ Error: No se encuentra el archivo origen en $FILE_ORIGEN"
-    exit 1
+    return 1 2>/dev/null || exit 1
 fi
 
-# 2. Extracción de números para reemplazos lógicos (DBs, carpetas internas)
-# Buscamos el primer bloque de números en el nombre
+# Verificar que el destino no exista (para no pisar por error)
+if [ -f "$FILE_DESTINO" ]; then
+    echo "⚠️ El archivo destino ya existe en $FILE_DESTINO"
+    read -p "¿Deseas sobrescribirlo? (s/n): " PISAR
+    [[ "$PISAR" =~ ^[Ss]$ ]] || { echo "Abortado."; return 0 2>/dev/null || exit 0; }
+fi
+
+# 2. Extracción de números
 NUM_ORIGEN=$(echo "$INSTANCIA_ORIGEN" | grep -oP '\d+' | head -n 1 || echo "")
 NUM_DESTINO=$(echo "$INSTANCIA_DESTINO" | grep -oP '\d+' | head -n 1 || echo "")
 
@@ -41,20 +51,14 @@ if [[ "$CONFIRMAR" =~ ^[Ss]$ ]]; then
     sudo cp "$FILE_ORIGEN" "$FILE_DESTINO"
     sudo chown "$USER" "$FILE_DESTINO"
 
-    # A. Reemplazo del nombre de la instancia (Texto completo)
-    # Útil si el nombre se usa dentro del YAML para logs o IDs
+    # Reemplazos con separador "|" para evitar problemas con paths
     sed -i "s|${INSTANCIA_ORIGEN}|${INSTANCIA_DESTINO}|g" "$FILE_DESTINO"
 
-    # B. Reemplazo numérico (para nombres de base de datos)
     if [ -n "$NUM_ORIGEN" ] && [ -n "$NUM_DESTINO" ]; then
         sed -i "s|${NUM_ORIGEN}|${NUM_DESTINO}|g" "$FILE_DESTINO"
     fi
 
-    # C. Reemplazo de Puerto (Busca el bloque 'server:' y cambia el 'port:')
-    # El regex busca 'port:' solo si está precedido por espacios bajo 'server:'
     sed -i "/^server:/,/^[^ ]/ s|\(port: \).*|\1${NUEVO_PUERTO}|" "$FILE_DESTINO"
-
-    # D. Reemplazo de Password (Busca el bloque 'db:' y cambia el 'password:')
     sed -i "/^db:/,/^[^ ]/ s|\(password: \).*|\1${NUEVA_PASS}|" "$FILE_DESTINO"
 
     echo -e "\n✅ Archivo generado: $FILE_DESTINO"
