@@ -41,14 +41,29 @@ echo "------------------------------------------"
 read -p "¿Confirmar ejecución con privilegios sudo? (s/n): " CONFIRMAR
 [[ "$CONFIRMAR" =~ ^[Ss]$ ]] || { echo "❌ Operación cancelada."; return 0 2>/dev/null || exit 0; }
 
-# 5. Actualización de Código
+# 5. Actualización de Código con Reintento y Manejo de Errores
 cd "/opt/npm/$nombre_dir/" || { echo "❌ No se pudo entrar a la carpeta de la app"; return 1; }
 
-echo "📡 Sincronizando con Git (Reset Hard)..."
+echo "📡 Asignando permisos temporales para Git..."
 sudo chown -R $USER .
-git fetch origin
-CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-git reset --hard "origin/$CURRENT_BRANCH"
+
+while true; do
+    echo "📡 Sincronizando con Git (Fetch & Reset)..."
+    if git fetch origin; then
+        CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+        git reset --hard "origin/$CURRENT_BRANCH"
+        echo "✅ Código sincronizado correctamente."
+        break # Sale del bucle y continúa el deploy
+    else
+        echo -e "\n❌ Error al autenticar o sincronizar con Git."
+        read -p "¿Deseas reintentar la autenticación de Git? (s/n): " REINTENTAR
+        if [[ ! "$REINTENTAR" =~ ^[Ss]$ ]]; then
+            echo "🛑 Operación cancelada por el usuario. Restaurando permisos del directorio..."
+            sudo chown -R ${server_user} "/opt/npm/$nombre_dir"
+            return 1 2>/dev/null || exit 1
+        fi
+    fi
+done
 
 # 6. Reconstrucción
 echo "📦 Reinstalando dependencias (npm ci)..."
