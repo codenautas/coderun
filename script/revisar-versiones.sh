@@ -15,6 +15,9 @@
 # - Por seguridad, solo ejecuta binarios que pertenecen a root o al usuario
 #   actual y que no son modificables por el grupo ni por otros usuarios.
 #   Para los demás intenta deducir la versión a partir de la ruta (caso nvm).
+# - Las instalaciones de nvm se buscan en /opt/.nvm (ubicación del instructivo
+#   de instalación), en $NVM_DIR, en /root y en /home/*; sin sudo no se pueden
+#   leer los home de otros usuarios.
 #
 # Código de salida: 0 sin observaciones; 1 con al menos una observación.
 
@@ -64,6 +67,7 @@ hay_paquetes_ubuntu=0
 PENDIENTES=""
 declare -a PROC_RUTAS=()
 declare -A PROC_REEMPLAZADOS=()
+declare -A EN_EJECUCION=()
 
 informar() { # nivel mensaje
     printf '%-12s %s\n' "$1" "$2"
@@ -106,8 +110,8 @@ paquete_de() { # ruta → nombre del paquete dpkg que la instaló (vacío si nin
 # ---------------------------------------------------------------------------
 # Comparación contra la tabla
 # ---------------------------------------------------------------------------
-evaluar() { # componente versión tabla campos_de_rama detalle
-    local componente="$1" version="$2" tabla="$3" campos="$4" detalle="$5"
+evaluar() { # componente versión tabla campos_de_rama detalle es_paquete_ubuntu
+    local componente="$1" version="$2" tabla="$3" campos="$4" detalle="$5" es_ubuntu="$6"
     local rama linea ultima nota mas_nueva
     rama=$(cut -d. -f1-"$campos" <<<"$version")
     linea=$(awk -F'|' -v r="$rama" '$1 == r { print; exit }' <<<"$tabla")
@@ -115,6 +119,8 @@ evaluar() { # componente versión tabla campos_de_rama detalle
         mas_nueva=$(head -n1 <<<"$tabla" | cut -d'|' -f1)
         if dpkg --compare-versions "$rama" gt "$mas_nueva"; then
             informar "AVISO" "$componente $version$detalle: la rama $rama es posterior a la tabla ($TABLA_FECHA) o es preliminar; no se evalúa"
+        elif (( es_ubuntu == 1 )); then
+            informar "AVISO" "$componente $version$detalle: la rama $rama ya no tiene soporte del proyecto original; Ubuntu mantiene el paquete con parches propios mientras su versión de Ubuntu tenga soporte"
         else
             informar "SIN-SOPORTE" "$componente $version$detalle: la rama $rama ya no recibe correcciones de seguridad"
         fi
@@ -134,7 +140,7 @@ evaluar() { # componente versión tabla campos_de_rama detalle
 revisar() { # componente tabla campos_de_rama función_de_versión rutas...
     local componente="$1" tabla="$2" campos="$3" extractor="$4"
     shift 4
-    local ruta real version detalle pkg pkgver encontrado=0
+    local ruta real version detalle pkg pkgver es_ubuntu encontrado=0
     local -A vistas=()
     for ruta in "$@"; do
         [[ -n "$ruta" && -e "$ruta" ]] || continue
@@ -143,6 +149,10 @@ revisar() { # componente tabla campos_de_rama función_de_versión rutas...
         vistas[$real]=1
         encontrado=1
         detalle=" [$real"
+        es_ubuntu=0
+        if [[ -n "${EN_EJECUCION[$real]:-}" ]]; then
+            detalle+=", en ejecución"
+        fi
         if se_puede_ejecutar "$real"; then
             version=$("$extractor" "$real")
         else
@@ -164,11 +174,12 @@ revisar() { # componente tabla campos_de_rama función_de_versión rutas...
             detalle+=", paquete $pkg $pkgver"
             if [[ "$pkgver" == *ubuntu* ]]; then
                 hay_paquetes_ubuntu=1
+                es_ubuntu=1
                 detalle+=" *"
             fi
         fi
         detalle+="]"
-        evaluar "$componente" "$version" "$tabla" "$campos" "$detalle"
+        evaluar "$componente" "$version" "$tabla" "$campos" "$detalle" "$es_ubuntu"
         if [[ -n "$pkg" ]] && grep -qxF -- "$pkg" <<<"$PENDIENTES"; then
             informar "ATENCIÓN" "$componente: el paquete $pkg tiene una actualización pendiente en apt"
         fi
@@ -204,6 +215,7 @@ relevar_procesos() {
             PROC_REEMPLAZADOS[${exe% (deleted)}]=$pid
         else
             PROC_RUTAS+=("$exe")
+            EN_EJECUCION[$(readlink -f -- "$exe")]=1
         fi
     done
 }
@@ -304,7 +316,9 @@ principal() {
     titulo "Node.js"
     mapfile -t extra < <(rutas_en_proc 'node')
     revisar "Node.js" "$TABLA_NODE" 1 version_node \
-        "$(command -v node || true)" /usr/bin/node /usr/local/bin/node "${extra[@]}"
+        "$(command -v node || true)" /usr/bin/node /usr/local/bin/node \
+        /opt/.nvm/versions/node/*/bin/node "${NVM_DIR:-/opt/.nvm}"/versions/node/*/bin/node \
+        /root/.nvm/versions/node/*/bin/node /home/*/.nvm/versions/node/*/bin/node "${extra[@]}"
 
     titulo "Procesos en ejecución"
     if (( ${#PROC_REEMPLAZADOS[@]} == 0 )); then
