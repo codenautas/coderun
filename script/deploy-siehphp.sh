@@ -1,11 +1,14 @@
 #!/bin/bash
-# descargar_operativo.sh
+# deploy-siehphp.sh
 # Clona siehphp trayendo solo la carpeta del operativo y las carpetas compartidas que usa.
-# Pregunta en qué ruta descargar (Enter = directorio actual) y crea <ruta>/<operativo>/.
+# Pregunta el ambiente y en qué ruta descargar (Enter = directorio actual) y crea:
+#   test       -> <ruta>/<operativo>-test/
+#   capa       -> <ruta>/<operativo>-capa/
+#   produccion -> <ruta>/<operativo>/
 # Uso:
-#   bash descargar_operativo.sh etoi264
-#   bash descargar_operativo.sh etoi264 otra_rama
-#   bash descargar_operativo.sh                    (pide nombre y rama)
+#   bash deploy-siehphp.sh etoi264
+#   bash deploy-siehphp.sh etoi264 otra_rama
+#   bash deploy-siehphp.sh                    (pide nombre y rama)
 
 set -e
 
@@ -30,6 +33,20 @@ if [ -z "$RAMA" ]; then
     RAMA="${RAMA:-$RAMA_DEF}"
 fi
 
+echo "Ambiente:"
+echo "  1) test        -> $OPERATIVO-test"
+echo "  2) capa        -> $OPERATIVO-capa"
+echo "  3) produccion  -> $OPERATIVO"
+while true; do
+    read -rp "Elegí el ambiente [1]: " AMBIENTE
+    case "${AMBIENTE:-1}" in
+        1|test)       AMBIENTE="test";       SUFIJO="-test"; break ;;
+        2|capa)       AMBIENTE="capa";       SUFIJO="-capa"; break ;;
+        3|produccion) AMBIENTE="produccion"; SUFIJO="";      break ;;
+        *) echo "Opción inválida." ;;
+    esac
+done
+
 read -rp "Ruta donde descargar [$PWD]: " BASE
 BASE="${BASE:-$PWD}"
 BASE="${BASE/#\~/$HOME}"
@@ -43,7 +60,9 @@ if [ ! -d "$BASE" ]; then
 fi
 
 BASE="$(cd "$BASE" && pwd)"
-DESTINO="$BASE/$OPERATIVO"
+# La carpeta del operativo adentro del repo siempre se llama $OPERATIVO;
+# el sufijo del ambiente va solo en la carpeta del clon.
+DESTINO="$BASE/$OPERATIVO$SUFIJO"
 
 if [ -e "$DESTINO" ]; then
     echo "Error: ya existe '$DESTINO'." >&2
@@ -89,13 +108,31 @@ echo ""
 # ── Siguiente paso: crear la configuración ───────────────────────────────────
 
 if [ -f crear_configuracion.sh ]; then
-    read -rp "¿Correr ahora 'bash crear_configuracion.sh $OPERATIVO'? [S/n]: " RESP
+    read -rp "¿Correr ahora 'bash crear_configuracion.sh $OPERATIVO $AMBIENTE'? [S/n]: " RESP
     case "$RESP" in
         [nN]*) ;;
-        *) bash crear_configuracion.sh "$OPERATIVO" ;;
+        *) bash crear_configuracion.sh "$OPERATIVO" "$AMBIENTE" ;;
     esac
 else
     echo "Aviso: no se encontró crear_configuracion.sh en $DESTINO." >&2
+fi
+
+# ── Dueño www-data, grupo del usuario ────────────────────────────────────────
+
+# Va al final porque crear_configuracion.sh también toca dueños y grupos.
+# PHP (www-data) queda como dueño y el usuario sigue pudiendo usar git por el grupo.
+GRUPO="$(id -gn)"
+echo ""
+echo "Ajustando permisos: dueño www-data, grupo $GRUPO ..."
+# Que git cree sus archivos nuevos con escritura para el grupo
+git config core.sharedRepository group
+sudo chown -R "www-data:$GRUPO" "$DESTINO"
+sudo chmod -R g+rwX "$DESTINO"
+# setgid en las carpetas: lo que se cree adentro hereda el grupo
+sudo find "$DESTINO" -type d -exec chmod g+s {} +
+# Sin esto git rechaza el repo por ser de otro dueño ("dubious ownership")
+if ! git config --global --get-all safe.directory | grep -qxF "$DESTINO"; then
+    git config --global --add safe.directory "$DESTINO"
 fi
 
 # Un script no puede cambiar el directorio de la terminal que lo llamó;
