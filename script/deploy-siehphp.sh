@@ -2,8 +2,8 @@
 # deploy-siehphp.sh
 # Clona siehphp trayendo solo la carpeta del operativo y las carpetas compartidas que usa.
 # Pregunta el ambiente y en qué ruta descargar (Enter = directorio actual) y crea:
-#   test       -> <ruta>/<operativo>-test/
-#   capa       -> <ruta>/<operativo>-capa/
+#   test       -> <ruta>/<operativo>_test/
+#   capa       -> <ruta>/<operativo>_capa/
 #   produccion -> <ruta>/<operativo>/
 # Uso:
 #   bash deploy-siehphp.sh etoi264
@@ -34,14 +34,14 @@ if [ -z "$RAMA" ]; then
 fi
 
 echo "Ambiente:"
-echo "  1) test        -> $OPERATIVO-test"
-echo "  2) capa        -> $OPERATIVO-capa"
+echo "  1) test        -> ${OPERATIVO}_test"
+echo "  2) capa        -> ${OPERATIVO}_capa"
 echo "  3) produccion  -> $OPERATIVO"
 while true; do
     read -rp "Elegí el ambiente [1]: " AMBIENTE
     case "${AMBIENTE:-1}" in
-        1|test)       AMBIENTE="test";       SUFIJO="-test"; break ;;
-        2|capa)       AMBIENTE="capa";       SUFIJO="-capa"; break ;;
+        1|test)       AMBIENTE="test";       SUFIJO="_test"; break ;;
+        2|capa)       AMBIENTE="capa";       SUFIJO="_capa"; break ;;
         3|produccion) AMBIENTE="produccion"; SUFIJO="";      break ;;
         *) echo "Opción inválida." ;;
     esac
