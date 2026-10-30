@@ -68,7 +68,11 @@ done
 # 6. Reconstrucción
 echo "📦 Reinstalando dependencias (npm ci)..."
 rm -rf dist
-npm ci
+if ! npm ci; then
+    echo "❌ npm ci falló. No se reinicia el servicio. Restaurando permisos del directorio..."
+    sudo chown -R ${server_user} "/opt/npm/$nombre_dir"
+    return 1 2>/dev/null || exit 1
+fi
 
 # 7. Permisos de Sistema
 echo "🛡️ Restaurando permisos de root y usuario app..."
@@ -85,8 +89,33 @@ sudo systemctl daemon-reload
 sudo systemctl restart "$nombre_dir.service"
 
 # 9. Verificación Final
-if systemctl is-active --quiet "$nombre_dir.service"; then
+# systemd da por "active" a un servicio Type=simple apenas lanza el proceso,
+# aunque la app muera un segundo después. Se espera a que el puerto responda
+# y se confirma que el servicio sigue activo y sin reinicios automáticos.
+verificar_servicio() { # servicio puerto [limite_seg]
+    local svc="$1" port="$2" limite="${3:-60}" t=0 n_antes n_ahora
+    n_antes=$(systemctl show -p NRestarts --value "$svc")
+    while (( t < limite )); do
+        if systemctl is-active --quiet "$svc" && (exec 3<>"/dev/tcp/127.0.0.1/$port") 2>/dev/null; then
+            sleep 5   # confirma que no se cae apenas levanta
+            n_ahora=$(systemctl show -p NRestarts --value "$svc")
+            systemctl is-active --quiet "$svc" && [ "$n_ahora" = "$n_antes" ] && return 0
+            return 1
+        fi
+        sleep 2; t=$((t+2))
+    done
+    return 1
+}
+
+echo "🔎 Verificando que $nombre_dir.service responda en el puerto $server_port..."
+if verificar_servicio "$nombre_dir.service" "$server_port"; then
     echo -e "\n✅ INSTANCIA $nombre_dir ACTUALIZADA Y ONLINE"
 else
-    echo -e "\n⚠️ El servicio se reinició pero no está activo. Revisá los logs."
+    echo -e "\n❌ El servicio NO quedó online (no responde en el puerto $server_port o se reinicia solo)."
+    echo "------ systemctl status ------"
+    systemctl status "$nombre_dir.service" --no-pager -l | head -n 15
+    echo "------ últimas líneas del log (journalctl -u $nombre_dir.service) ------"
+    sudo journalctl -u "$nombre_dir.service" -n 40 --no-pager
+    echo "------------------------------------------"
+    return 1 2>/dev/null || exit 1
 fi
