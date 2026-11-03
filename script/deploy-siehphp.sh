@@ -14,7 +14,6 @@ set -e
 
 REPO_URL="https://github.com/es-ba/siehphp.git"
 RAMA_DEF="master"
-COMPARTIDAS="tedede encuestas tercera imagenes tools"
 
 OPERATIVO="${1:-}"
 RAMA="${2:-}"
@@ -27,6 +26,8 @@ if [ -z "$OPERATIVO" ]; then
     echo "Error: nombre de operativo vacío." >&2
     exit 1
 fi
+
+COMPARTIDAS="tedede encuestas tercera imagenes tools operaciones_$OPERATIVO"
 
 if [ -z "$RAMA" ]; then
     read -rp "Rama a descargar [$RAMA_DEF]: " RAMA
