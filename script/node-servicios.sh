@@ -18,7 +18,8 @@
 #       # daemon-reload y, solo con --reiniciar, reinicia el servicio.
 #       # VERSION puede ser un número (ej. 20) o "-" para quitar la fijación.
 #
-# No modifica nada si no se usa --cambiar.
+# No modifica nada salvo con --cambiar o --limpiar --aplicar.
+# Ayuda completa con el procedimiento: node-servicios.sh --help
 
 set -u
 
@@ -32,6 +33,119 @@ REINICIAR=0
 LIMPIAR=0
 APLICAR=0
 
+ayuda() {
+    cat <<'AYUDA'
+node-servicios.sh — versiones de node de los servicios de /opt/services
+
+CÓMO FUNCIONA
+  El número que sigue a run-app.sh en el .service es la versión de node:
+  "run-app.sh 12" hace "nvm use 12" y usa la 12.x más alta instalada en
+  /opt/.nvm. Sin número usa el alias default de nvm.
+  - Un proceso ya iniciado no cambia de versión: el cambio rige desde el próximo
+    reinicio del servicio.
+  - Los servicios sin número toman el default cada vez que arrancan. Si se
+    sube el default, todos suben en su próximo reinicio.
+  - Si la versión fijada no está instalada, "nvm use" falla y "npm start" corre
+    con el node que haya en el PATH (el informe la marca NO INSTALADA).
+
+OPCIONES
+  (sin opciones)         Informe de solo lectura: por servicio, estado, versión
+                         fijada, versión a la que resuelve, versión más alta
+                         instalada a la que podría subir y "engines" del
+                         package.json. Después, qué servicios usa cada versión
+                         instalada.
+  --solo-fijadas         Omite los servicios sin versión fijada.
+  --dir DIR              Otro directorio de .service (default /opt/services).
+  --cambiar SERV VERSION Edita el .service: VERSION es un número (ej. 22) o "-"
+                         para quitar la fijación. Deja backup .bak-AAAAMMDD-HHMMSS,
+                         hace daemon-reload y muestra el diff. No reinicia salvo
+                         con --reiniciar. Requiere sudo.
+  --reiniciar            Con --cambiar: reinicia el servicio.
+  --limpiar              Lista los comandos "nvm uninstall" de las versiones sin
+                         uso. No ejecuta nada.
+  --aplicar              Con --limpiar: las desinstala. Requiere sudo.
+  -h, --help             Esta ayuda.
+
+LIMITACIÓN IMPORTANTE
+  El informe deduce la versión desde la unidad y el default de nvm, NO desde lo
+  que está corriendo. Un servicio que arrancó antes de un cambio de default, o
+  que no se reinició, puede usar otra versión. Antes de desinstalar, verificar
+  siempre con los procesos reales (paso 3 de abajo).
+
+PROCEDIMIENTO: LIMPIAR VERSIONES SIN USO
+  1. Informe:
+       sudo node-servicios.sh
+     Mirar la tabla "Versiones de node instaladas": las "(sin uso)" son
+     candidatas.
+  2. Servicios caídos o en bucle de reinicios (cada uno debe dar "0 active"):
+       for f in /opt/services/*.service; do n=$(basename $f .service)
+         echo "$(systemctl show -p NRestarts --value $n) $(systemctl is-active $n) $n"
+       done | sort -rn | head -15
+  3. Versiones que corren de verdad (solo deben aparecer las que se conservan):
+       sudo ls -l /proc/[0-9]*/exe 2>/dev/null | grep -o 'nvm/versions/node/v[0-9.]*' | sort | uniq -c
+     Con el servicio de cada una:
+       sudo bash -c 'for p in /proc/[0-9]*; do e=$(readlink $p/exe 2>/dev/null)
+         case "$e" in *nvm/versions/node/*)
+           echo "$(echo $e | grep -o "v[0-9][0-9.]*") $(grep -o "[^/]*\.service" $p/cgroup | head -1)";;
+         esac; done | sort -u | sort -V'
+     Si una versión "sin uso" aparece acá, NO se borra: hay que reiniciar esos
+     servicios para que tomen otra (sudo systemctl restart SERVICIO).
+  4. Referencias fuera de /opt/services (cron, otras unidades):
+       sudo grep -rl 'nvm/versions/node' /etc/cron* /var/spool/cron /etc/systemd/system 2>/dev/null
+     No debe devolver nada.
+  5. Simulación:
+       sudo node-servicios.sh --limpiar
+  6. Borrar una a mano para verificar:
+       sudo bash -c '. /opt/.nvm/nvm.sh && nvm uninstall vX.Y.Z'
+       ls /opt/.nvm/versions/node/
+     Debe decir "Uninstalled node vX.Y.Z" y desaparecer del listado.
+  7. Borrar el resto:
+       sudo node-servicios.sh --limpiar --aplicar
+     Si alguna versión sigue en uso (paso 3), desinstalar a mano solo las demás.
+  8. Volver a correr el informe y los chequeos 2 y 3: tienen que quedar solo las
+     versiones previstas y los servicios en "active" sin reinicios.
+  Una versión borrada se reinstala con: nvm install N
+
+PROCEDIMIENTO: SUBIR LA VERSIÓN DE UN SERVICIO (de a uno, en horario de poco uso)
+  1. Cambiar y reiniciar:
+       sudo node-servicios.sh --cambiar SERVICIO VERSION --reiniciar
+     (VERSION "-" lo deja sin fijar, usando el default de nvm).
+  2. Esperar ~30 segundos y verificar:
+       systemctl status SERVICIO --no-pager | grep Active
+       journalctl -u SERVICIO -n 15 --no-pager | grep -E 'Now using|restart'
+     Debe decir "Now using node vX", un "Active" de más de 30 segundos y ningún
+     "Scheduled restart job". Probar además una pantalla de la app que use la
+     base. Si en el primer minuto aparecen 2 o 3 reinicios y después se
+     estabiliza, es el solapamiento con el proceso anterior; esperar antes de
+     darlo por malo.
+  3. Si falla, volver a la versión anterior:
+       sudo node-servicios.sh --cambiar SERVICIO VERSION_ANTERIOR --reiniciar
+     o restaurar el backup:
+       sudo cp -p /opt/services/SERVICIO.service.bak-FECHA /opt/services/SERVICIO.service
+       sudo systemctl daemon-reload && sudo systemctl restart SERVICIO
+
+OTROS CHEQUEOS
+  Servicios de /opt/services sin ningún proceso escuchando (esperable en
+  tareas como los backups; sospechoso en una app web):
+       sudo bash -c 'comm -23 <(ls /opt/services/*.service | xargs -n1 basename | sort) \
+         <(ss -ltnpH | grep -o "pid=[0-9]*" | cut -d= -f2 | sort -u | while read p; do grep -o "[^/]*\.service" /proc/$p/cgroup | head -1; done | sort -u)'
+
+PROBLEMAS CONOCIDOS
+  - "libatomic.so.1: cannot open shared object file": instalar libatomic1
+    (sudo apt install libatomic1). Sin acceso por proxy: "apt download libatomic1"
+    o "apt-get install --print-uris -y libatomic1" para ver las URLs de los .deb y
+    "sudo dpkg -i" (puede pedir también gcc-XX-base de la misma versión).
+  - Al cambiar de versión mayor, los módulos nativos de node_modules pueden
+    necesitar recompilarse (buscarlos con: find node_modules -name '*.node').
+  - Los backups .bak-* de /opt/services no se limpian solos; borrarlos a mano
+    cuando el cambio está confirmado.
+  - Si el script falla con "bad interpreter" o "$'\r': command not found" tiene
+    finales de línea de Windows: sed -i 's/\r$//' node-servicios.sh
+  - Los servicios que no usan run-app.sh no se relevan (se listan aparte): podrían
+    usar directamente una versión que figura "sin uso".
+AYUDA
+}
+
 while (( $# )); do
     case "$1" in
         --dir)         SERVICIOS_DIR=$2; shift 2 ;;
@@ -40,7 +154,7 @@ while (( $# )); do
         --reiniciar)   REINICIAR=1; shift ;;
         --limpiar)     LIMPIAR=1; shift ;;
         --aplicar)     APLICAR=1; shift ;;
-        -h|--help)     sed -n '2,24p' "$0"; exit 0 ;;
+        -h|--help)     ayuda; exit 0 ;;
         *) echo "Parámetro desconocido: $1" >&2; exit 2 ;;
     esac
 done
@@ -209,4 +323,6 @@ if (( LIMPIAR )); then
         (( APLICAR )) || echo "(simulación: agregar --aplicar para ejecutarlo, con el usuario dueño de $NVM_DIR)"
     fi
 fi
-printf '\nCambiar uno:  sudo %s --cambiar SERVICIO VERSION [--reiniciar]\n' "$(basename "$0")"
+printf '\nNota: las versiones se deducen de las unidades y del default de nvm, no de los procesos en ejecución.\n'
+printf 'Cambiar uno:  sudo %s --cambiar SERVICIO VERSION [--reiniciar]\n' "$(basename "$0")"
+printf 'Procedimiento completo y chequeos: %s --help\n' "$(basename "$0")"
