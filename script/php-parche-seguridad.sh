@@ -31,6 +31,18 @@ if [[ $EUID -ne 0 ]]; then
   exit 1
 fi
 
+# Proxy HTTPS solo para estas llamadas de apt (no modifica la config del sistema).
+# Se toma del propio sistema: primero el proxy HTTP efectivo de apt, y si no hay,
+# la variable http_proxy. Se puede forzar con: PROXY_HTTPS_APT=http://host:puerto sudo -E ./parchear-php.sh
+# Si el sistema no tiene proxy, no se agrega ninguna opcion.
+if [[ -z "${PROXY_HTTPS_APT:-}" ]]; then
+  PROXY_HTTPS_APT=$(apt-config dump 2>/dev/null | sed -n 's/^Acquire::http::Proxy "\(.*\)";$/\1/p' | head -n1)
+fi
+[[ -z "$PROXY_HTTPS_APT" ]] && PROXY_HTTPS_APT="${http_proxy:-}"
+[[ -n "$PROXY_HTTPS_APT" && "$PROXY_HTTPS_APT" != *://* ]] && PROXY_HTTPS_APT="http://$PROXY_HTTPS_APT"
+APT_OPTS=()
+[[ -n "$PROXY_HTTPS_APT" ]] && APT_OPTS=(-o "Acquire::https::Proxy=$PROXY_HTTPS_APT")
+
 LOG="/var/log/parchear-php.log"
 exec > >(tee -a "$LOG") 2>&1
 echo "=== $(date '+%F %T') - Inicio parche PHP ==="
@@ -54,16 +66,16 @@ if [[ $SIMULAR -eq 0 ]]; then
 fi
 
 # 3) Actualizar indices
-apt-get update -qq
+apt-get "${APT_OPTS[@]}" update -qq
 
 # 4) Simulacion o actualizacion real (solo esos paquetes)
 if [[ $SIMULAR -eq 1 ]]; then
   echo "--- SIMULACION (no se cambia nada) ---"
-  apt-get install --only-upgrade --dry-run "${PAQUETES[@]}"
+  apt-get "${APT_OPTS[@]}" install --only-upgrade --dry-run "${PAQUETES[@]}"
   exit 0
 fi
 
-DEBIAN_FRONTEND=noninteractive apt-get install --only-upgrade -y \
+DEBIAN_FRONTEND=noninteractive apt-get "${APT_OPTS[@]}" install --only-upgrade -y \
   -o Dpkg::Options::="--force-confold" "${PAQUETES[@]}"
 
 echo "Version nueva: $(php -v 2>/dev/null | head -n1 || true)"
