@@ -178,13 +178,7 @@ for v in "${VERSIONES[@]}"; do echo "  PHP ${v}: ${ESTADO[$v]}"; done
 echo "Consola (php -v): $(php -v 2>/dev/null | head -n1 || echo 'php no esta en el PATH')"
 echo "Paquetes a actualizar: ${#PAQUETES[@]}"
 
-# 2) Backup de configuracion
-if [[ $SIMULAR -eq 0 ]]; then
-  BACKUP="/var/backups/php-etc-$(date +%F_%H%M%S).tar.gz"
-  tar -czf "$BACKUP" /etc/php 2>/dev/null && echo "Backup de /etc/php: $BACKUP"
-fi
-
-# 4) Simulacion previa + guarda de seguridad.
+# 2) Simulacion previa + guarda de seguridad.
 #    Un parche solo debe ACTUALIZAR paquetes ya instalados ("Inst nombre [vieja] (nueva)").
 #    Si apt quisiera instalar un paquete nuevo (sin [version vieja]) o quitar alguno,
 #    se aborta sin tocar nada: seria un cambio de version y no un parche.
@@ -204,6 +198,30 @@ if [[ $SIMULAR -eq 1 ]]; then
   grep '^Inst' <<<"$SIM" || echo "(ninguno: ya esta todo al dia)"
   exit 0
 fi
+
+A_ACTUALIZAR=$(grep '^Inst' <<<"$SIM" || true)
+if [[ -z "$A_ACTUALIZAR" ]]; then
+  echo "No hay parches disponibles: ya esta todo al dia. No se modifico nada."
+  exit 0
+fi
+
+# 3) Confirmacion (solo en modo menu: sin opciones y con terminal)
+if [[ $SIN_ARGS -eq 1 && -t 0 ]]; then
+  echo
+  echo "Se van a actualizar estos paquetes ($(wc -l <<<"$A_ACTUALIZAR")):"
+  sed 's/^Inst \([^ ]*\) \[\([^]]*\)\] (\([^ ]*\).*/  \1: \2 -> \3/' <<<"$A_ACTUALIZAR"
+  [[ $REINICIAR -eq 1 ]] && echo "Despues se recargan los servicios PHP-FPM de la(s) version(es) elegida(s)." \
+                         || echo "No se recargan servicios."
+  read -r -p "Continuar? [s/N]: " CONF
+  if [[ ! "$CONF" =~ ^[sS]$ ]]; then
+    echo "Cancelado. No se modifico nada."
+    exit 0
+  fi
+fi
+
+# 4) Backup de configuracion
+BACKUP="/var/backups/php-etc-$(date +%F_%H%M%S).tar.gz"
+tar -czf "$BACKUP" /etc/php 2>/dev/null && echo "Backup de /etc/php: $BACKUP"
 
 DEBIAN_FRONTEND=noninteractive apt-get "${APT_OPTS[@]}" install --only-upgrade -y \
   -o Dpkg::Options::="--force-confold" "${PAQUETES[@]}"
