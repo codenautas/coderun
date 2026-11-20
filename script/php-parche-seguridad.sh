@@ -8,22 +8,36 @@
 # Servicios: recarga PHP-FPM (reload). Nginx no se toca. Apache solo se
 # reinicia si PHP corre como modulo (libapache2-mod-php).
 #
+# Sin opciones y desde una terminal, muestra un menu de acciones (ver estado,
+# simular, parchear, parchear sin recargar servicios). Si hay mas de una version
+# instalada, despues pide elegir una o todas.
+#
 # Uso:
-#   sudo ./parchear-php.sh             # parchea y recarga servicios
-#   sudo ./parchear-php.sh --simular   # solo muestra que se actualizaria
+#   sudo ./parchear-php.sh                 # menu de acciones y de versiones
+#   sudo ./parchear-php.sh --simular       # solo muestra que se actualizaria
 #   sudo ./parchear-php.sh --sin-reinicio
+#   sudo ./parchear-php.sh --version 8.3   # sin menu: solo esa version
+#   sudo ./parchear-php.sh --todas         # sin menu: todas las versiones
+#   (sin terminal interactiva y sin --version/--todas, se parchean todas)
 
 set -euo pipefail
 
 SIMULAR=0
 REINICIAR=1
-for arg in "$@"; do
-  case "$arg" in
+ELEGIDA=""   # "" = preguntar, "todas", o "X.Y"
+SIN_ARGS=0; [[ $# -eq 0 ]] && SIN_ARGS=1   # sin opciones -> menu de acciones
+while [[ $# -gt 0 ]]; do
+  case "$1" in
     --simular)      SIMULAR=1 ;;
     --sin-reinicio) REINICIAR=0 ;;
-    -h|--help)      sed -n '2,15p' "$0"; exit 0 ;;
-    *) echo "Opcion desconocida: $arg" >&2; exit 1 ;;
+    --todas)        ELEGIDA="todas" ;;
+    --version)
+      [[ -n "${2:-}" ]] || { echo "--version requiere un valor (ej. 8.3)" >&2; exit 1; }
+      ELEGIDA="$2"; shift ;;
+    -h|--help)      sed -n '2,/^$/p' "$0"; exit 0 ;;
+    *) echo "Opcion desconocida: $1" >&2; exit 1 ;;
   esac
+  shift
 done
 
 if [[ $EUID -ne 0 ]]; then
@@ -60,19 +74,107 @@ if [[ ${#PAQUETES[@]} -eq 0 ]]; then
   exit 0
 fi
 
-# Muestra cada version de PHP instalada con su revision (ej. "PHP 8.3: 8.3.36")
-listar_versiones() {
-  local v ver
-  while read -r v; do
-    ver=$(dpkg-query -W -f='${Version}' "php${v}-common" 2>/dev/null \
-      || dpkg-query -W -f='${Version}' "php${v}" 2>/dev/null || true)
-    echo "  PHP ${v}: ${ver%%-*}"
-  done < <(printf '%s\n' "${PAQUETES[@]}" \
-    | grep -oE '^(php|libapache2-mod-php)[0-9]+\.[0-9]+' | grep -oE '[0-9]+\.[0-9]+$' | sort -uV)
+# Versiones mayores instaladas (ej. 8.1, 8.3)
+mapfile -t VERSIONES < <(printf '%s\n' "${PAQUETES[@]}" \
+  | grep -oE '^(php|libapache2-mod-php)[0-9]+\.[0-9]+' | grep -oE '[0-9]+\.[0-9]+$' | sort -uV)
+
+# Revision instalada de una version (ej. "8.3" -> "8.3.6-0ubuntu0.24.04.1")
+revision() {
+  dpkg-query -W -f='${Version}' "php${1}-common" 2>/dev/null \
+    || dpkg-query -W -f='${Version}' "php${1}" 2>/dev/null || true
 }
 
-echo "Versiones de PHP instaladas (todas se parchean):"
-listar_versiones
+# Muestra cada version de PHP seleccionada con su revision instalada
+listar_versiones() {
+  local v
+  for v in "${VERSIONES[@]}"; do echo "  PHP ${v}: $(revision "$v")"; done
+}
+
+# Actualizar indices (necesario para saber si hay parches disponibles)
+echo "Actualizando indices de apt..."
+apt-get "${APT_OPTS[@]}" update -qq
+
+# Estado de parche de cada version: simula la actualizacion de sus paquetes
+# y cuenta cuantos tienen una revision nueva disponible.
+declare -A ESTADO
+for v in "${VERSIONES[@]}"; do
+  VRE="${v//./[.]}"   # 8.3 -> 8[.]3 para usar en regex
+  mapfile -t PKGS_V < <(printf '%s\n' "${PAQUETES[@]}" \
+    | grep -E "^(php${VRE}(-.*)?|libapache2-mod-php${VRE})$")
+  ACT=$(apt-get "${APT_OPTS[@]}" -s install --only-upgrade "${PKGS_V[@]}" 2>/dev/null \
+    | grep '^Inst' | grep '\[' || true)
+  if [[ -z "$ACT" ]]; then
+    ESTADO[$v]="$(revision "$v")  [al dia]"
+  else
+    N=$(wc -l <<<"$ACT")
+    # Linea de referencia: phpX.Y-common si esta, si no la primera
+    # Formato: "Inst php8.3-common [8.3.6-0ubuntu0.24.04.1] (8.3.6-0ubuntu0.24.04.2 Ubuntu:...)"
+    REF=$(grep -E "^Inst php${VRE}-common " <<<"$ACT" || head -n1 <<<"$ACT")
+    DE=$(sed -n 's/^Inst [^ ]* \[\([^]]*\)\].*/\1/p' <<<"$REF" | head -n1)
+    A=$(sed -n 's/^Inst [^ ]* \[[^]]*\] (\([^ ]*\).*/\1/p' <<<"$REF" | head -n1)
+    ESTADO[$v]="$DE -> $A  [PARCHE DISPONIBLE: $N paquete(s)]"
+  fi
+done
+
+# 1a) Menu de acciones (solo sin opciones y con terminal interactiva)
+if [[ $SIN_ARGS -eq 1 && -t 0 ]]; then
+  while true; do
+    echo
+    echo "Que queres hacer?"
+    echo "  1) Ver versiones de PHP y parches disponibles"
+    echo "  2) Simular el parche (no cambia nada)"
+    echo "  3) Aplicar el parche y recargar servicios"
+    echo "  4) Aplicar el parche sin recargar servicios"
+    echo "  0) Salir"
+    read -r -p "Elegi una opcion: " ACC
+    case "$ACC" in
+      1) echo "Versiones de PHP instaladas:"
+         for v in "${VERSIONES[@]}"; do echo "  PHP ${v}: ${ESTADO[$v]}"; done ;;
+      2) SIMULAR=1; break ;;
+      3) break ;;
+      4) REINICIAR=0; break ;;
+      0) echo "Saliendo sin cambios."; exit 0 ;;
+      *) echo "Opcion invalida." ;;
+    esac
+  done
+fi
+
+# 1b) Elegir version(es) a parchear
+if [[ ${#VERSIONES[@]} -gt 1 && -z "$ELEGIDA" ]]; then
+  if [[ -t 0 ]]; then
+    echo "Versiones de PHP instaladas:"
+    for i in "${!VERSIONES[@]}"; do
+      echo "  $((i + 1))) PHP ${VERSIONES[$i]}: ${ESTADO[${VERSIONES[$i]}]}"
+    done
+    echo "  0) Todas"
+    while true; do
+      read -r -p "Elegi una opcion [0]: " OPC
+      OPC="${OPC:-0}"
+      if [[ "$OPC" == "0" ]]; then
+        ELEGIDA="todas"; break
+      elif [[ "$OPC" =~ ^[0-9]+$ ]] && (( OPC >= 1 && OPC <= ${#VERSIONES[@]} )); then
+        ELEGIDA="${VERSIONES[$((OPC - 1))]}"; break
+      fi
+      echo "Opcion invalida."
+    done
+  else
+    ELEGIDA="todas"   # sin terminal (cron, pipe): comportamiento anterior
+  fi
+fi
+
+if [[ -n "$ELEGIDA" && "$ELEGIDA" != "todas" ]]; then
+  if ! printf '%s\n' "${VERSIONES[@]}" | grep -qxF "$ELEGIDA"; then
+    echo "PHP $ELEGIDA no esta instalado. Instaladas: ${VERSIONES[*]}" >&2
+    exit 1
+  fi
+  VERSIONES=("$ELEGIDA")
+  # Solo paquetes de esa version (php-common es compartido y se mantiene)
+  mapfile -t PAQUETES < <(printf '%s\n' "${PAQUETES[@]}" \
+    | grep -E "^(php${ELEGIDA//./[.]}(-.*)?|libapache2-mod-php${ELEGIDA//./[.]}|php-common)$")
+fi
+
+echo "Versiones de PHP a parchear:"
+for v in "${VERSIONES[@]}"; do echo "  PHP ${v}: ${ESTADO[$v]}"; done
 echo "Consola (php -v): $(php -v 2>/dev/null | head -n1 || echo 'php no esta en el PATH')"
 echo "Paquetes a actualizar: ${#PAQUETES[@]}"
 
@@ -81,9 +183,6 @@ if [[ $SIMULAR -eq 0 ]]; then
   BACKUP="/var/backups/php-etc-$(date +%F_%H%M%S).tar.gz"
   tar -czf "$BACKUP" /etc/php 2>/dev/null && echo "Backup de /etc/php: $BACKUP"
 fi
-
-# 3) Actualizar indices
-apt-get "${APT_OPTS[@]}" update -qq
 
 # 4) Simulacion previa + guarda de seguridad.
 #    Un parche solo debe ACTUALIZAR paquetes ya instalados ("Inst nombre [vieja] (nueva)").
@@ -125,13 +224,15 @@ if [[ $REINICIAR -eq 1 ]]; then
     fi
   }
 
-  # PHP-FPM: reload (los workers terminan sus peticiones antes de salir)
-  for unidad in /lib/systemd/system/php*-fpm.service; do
-    [[ -e "$unidad" ]] && { accion reload "$(basename "$unidad" .service)" || true; }
+  # PHP-FPM: reload solo de las versiones parcheadas
+  # (los workers terminan sus peticiones antes de salir)
+  for v in "${VERSIONES[@]}"; do
+    [[ -e "/lib/systemd/system/php${v}-fpm.service" || -e "/etc/init.d/php${v}-fpm" ]] \
+      && { accion reload "php${v}-fpm" || true; }
   done
 
-  # Apache: solo si PHP corre como modulo (mod_php)
-  if dpkg-query -W -f='${db:Status-Abbrev}\n' 'libapache2-mod-php*' 2>/dev/null | grep -q '^ii'; then
+  # Apache: solo si alguna version parcheada corre como modulo (mod_php)
+  if printf '%s\n' "${PAQUETES[@]}" | grep -q '^libapache2-mod-php'; then
     accion restart apache2 || true
   fi
   # Nginx: no se toca (solo pasa peticiones a PHP-FPM por socket)
