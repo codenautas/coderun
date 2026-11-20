@@ -47,17 +47,34 @@ LOG="/var/log/parchear-php.log"
 exec > >(tee -a "$LOG") 2>&1
 echo "=== $(date '+%F %T') - Inicio parche PHP ==="
 
-# 1) Paquetes instalados: php* y el modulo de Apache (libapache2-mod-php*)
+# 1) Paquetes instalados CON version en el nombre (php8.3, php8.3-fpm, php8.3-pgsql,
+#    libapache2-mod-php8.3) mas php-common. Se excluyen a proposito los metapaquetes
+#    sin version (php, php-fpm, php-cli, php-json...): apuntan a la version "por defecto"
+#    del repositorio y, al actualizarlos, pueden instalar OTRA version mayor (ej. 8.4).
 mapfile -t PAQUETES < <(dpkg-query -W -f='${db:Status-Abbrev} ${Package}\n' 'php*' 'libapache2-mod-php*' 2>/dev/null \
-  | awk '$1 ~ /^ii/ {print $2}')
+  | awk '$1 ~ /^ii/ {print $2}' \
+  | grep -E '^(php[0-9]+\.[0-9]+(-.*)?|libapache2-mod-php[0-9]+\.[0-9]+|php-common)$')
 
 if [[ ${#PAQUETES[@]} -eq 0 ]]; then
   echo "No hay paquetes PHP instalados con apt. Nada que hacer."
   exit 0
 fi
 
-echo "Version actual: $(php -v 2>/dev/null | head -n1 || echo 'php no esta en el PATH')"
-echo "Paquetes detectados: ${#PAQUETES[@]}"
+# Muestra cada version de PHP instalada con su revision (ej. "PHP 8.3: 8.3.36")
+listar_versiones() {
+  local v ver
+  while read -r v; do
+    ver=$(dpkg-query -W -f='${Version}' "php${v}-common" 2>/dev/null \
+      || dpkg-query -W -f='${Version}' "php${v}" 2>/dev/null || true)
+    echo "  PHP ${v}: ${ver%%-*}"
+  done < <(printf '%s\n' "${PAQUETES[@]}" \
+    | grep -oE '^(php|libapache2-mod-php)[0-9]+\.[0-9]+' | grep -oE '[0-9]+\.[0-9]+$' | sort -uV)
+}
+
+echo "Versiones de PHP instaladas (todas se parchean):"
+listar_versiones
+echo "Consola (php -v): $(php -v 2>/dev/null | head -n1 || echo 'php no esta en el PATH')"
+echo "Paquetes a actualizar: ${#PAQUETES[@]}"
 
 # 2) Backup de configuracion
 if [[ $SIMULAR -eq 0 ]]; then
@@ -68,17 +85,32 @@ fi
 # 3) Actualizar indices
 apt-get "${APT_OPTS[@]}" update -qq
 
-# 4) Simulacion o actualizacion real (solo esos paquetes)
+# 4) Simulacion previa + guarda de seguridad.
+#    Un parche solo debe ACTUALIZAR paquetes ya instalados ("Inst nombre [vieja] (nueva)").
+#    Si apt quisiera instalar un paquete nuevo (sin [version vieja]) o quitar alguno,
+#    se aborta sin tocar nada: seria un cambio de version y no un parche.
+SIM=$(apt-get "${APT_OPTS[@]}" -s install --only-upgrade "${PAQUETES[@]}")
+NUEVOS=$(grep '^Inst' <<<"$SIM" | grep -v '\[' || true)
+QUITAR=$(grep '^Remv' <<<"$SIM" || true)
+if [[ -n "$NUEVOS" || -n "$QUITAR" ]]; then
+  echo "ABORTADO: la actualizacion instalaria o quitaria paquetes (no es solo un parche)."
+  [[ -n "$NUEVOS" ]] && { echo "Paquetes NUEVOS que instalaria:"; echo "$NUEVOS"; }
+  [[ -n "$QUITAR" ]] && { echo "Paquetes que quitaria:"; echo "$QUITAR"; }
+  echo "No se modifico nada. Revisa 'apt-cache policy php' y los repositorios."
+  exit 1
+fi
+
 if [[ $SIMULAR -eq 1 ]]; then
-  echo "--- SIMULACION (no se cambia nada) ---"
-  apt-get "${APT_OPTS[@]}" install --only-upgrade --dry-run "${PAQUETES[@]}"
+  echo "--- SIMULACION (no se cambia nada). Paquetes que se actualizarian: ---"
+  grep '^Inst' <<<"$SIM" || echo "(ninguno: ya esta todo al dia)"
   exit 0
 fi
 
 DEBIAN_FRONTEND=noninteractive apt-get "${APT_OPTS[@]}" install --only-upgrade -y \
   -o Dpkg::Options::="--force-confold" "${PAQUETES[@]}"
 
-echo "Version nueva: $(php -v 2>/dev/null | head -n1 || true)"
+echo "Versiones de PHP despues del parche:"
+listar_versiones
 
 # 5) Recargar servicios
 if [[ $REINICIAR -eq 1 ]]; then
@@ -106,6 +138,9 @@ if [[ $REINICIAR -eq 1 ]]; then
 fi
 
 # 6) Avisar si el sistema pide reinicio
-[[ -f /var/run/reboot-required ]] && echo "AVISO: el sistema indica que requiere reinicio."
+#    Solo si el reinicio pendiente lo pidio un paquete de PHP (no por kernel, libc, etc.)
+if [[ -f /var/run/reboot-required.pkgs ]] && grep -qE '^(php|libapache2-mod-php)' /var/run/reboot-required.pkgs; then
+  echo "AVISO: un paquete de PHP requiere reiniciar el sistema."
+fi
 
 echo "=== $(date '+%F %T') - Fin ==="
