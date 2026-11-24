@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -o errexit -o nounset -o pipefail
+
+if [ ! -f example-local-config.yaml ]; then
+  echo "No se encontro example-local-config.yaml en la carpeta actual"
+  exit 1
+fi
+if [ -e local-config.yaml ]; then
+  echo "Ya existe local-config.yaml: el ambiente ya esta instalado"
+  exit 1
+fi
+if [ -e local-pg ]; then
+  echo "Ya existe la carpeta local-pg: el ambiente ya esta instalado"
+  exit 1
+fi
+
+sed -E 's/:.*#[[:space:]]*for-test:[[:space:]]*/: /' example-local-config.yaml > local-config.yaml
+echo "Se genero local-config.yaml a partir de example-local-config.yaml"
+
+# shellcheck source=pg-env.sh
+. pg-env.sh
+if [ -z "$PGPORT" ]; then
+  echo "No se pudo leer db.port de local-config.yaml"
+  exit 1
+fi
+
+mkdir -p "$PGHOST"
+if ! initdb --username=postgres --auth=trust --encoding=UTF8 --locale-provider=icu --icu-locale=es-AR --locale=C.UTF-8 > "$PGHOST/initdb.log"; then
+  echo "Fallo initdb, el detalle esta en local-pg/initdb.log"
+  exit 1
+fi
+if ! start_pg_if_stopped; then
+  echo "Fallo el inicio de PostgreSQL, el detalle esta en local-pg/postgres.log"
+  exit 1
+fi
+
+npm ci
+npm run prepare
+npm start -- --dump-db
+run-sql create-db
+
+echo "Ambiente instalado"

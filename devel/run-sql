@@ -1,1 +1,56 @@
-Path=C:\Program Files (x86)\Intel\iCLS Client\;C:\Program Files\Intel\iCLS Client\;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\Program Files\Git\cmd;C:\Program Files\TortoiseSVN\bin;C:\WINDOWS\System32\OpenSSH\;C:\Program Files (x86)\Intel\Intel(R) Management Engine Components\DAL;C:\Program Files\Intel\Intel(R) Management Engine Components\DAL;C:\Program Files (x86)\Intel\Intel(R) Management Engine Components\IPT;C:\Program Files\Intel\Intel(R) Management Engine Components\IPT;C:\Program Files\MySQL\MySQL Utilities 1.6\;C:\ProgramData\chocolatey\bin;C:\Program Files\Java\jdk1.8.0_172\bin;C:\Android\android-sdk\tools;C:\Android\android-sdk\platform-tools;C:\Android\android-sdk\tools\bin;;C:\Program Files\Microsoft VS Code\bin;C:\Program Files\Intel\WiFi\bin\;C:\Program Files\Common Files\Intel\WirelessCommon\;C:\Program Files\TortoiseGit\bin;C:\Program Files\nodejs\;C:\Program Files (x86)\Gpg4win\..\GnuPG\bin;C:\Users\emili\AppData\Local\Microsoft\WindowsApps;C:\Program Files\Microsoft VS Code\bin;C:\Users\emili\AppData\Roaming\npm;
+#!/bin/sh
+single_transaction="-v ON_ERROR_STOP=on --single-transaction --pset pager=off --quiet"
+
+base_de_local_config() {
+  yq '.db.database // ""' local-config.yaml 2>/dev/null
+}
+
+informar_error() {
+  if [ "$1" = 127 ]; then
+    echo "No se encontro el psql en el path"
+  else
+    if [ -z "$PGPORT" ]; then
+      echo "Quizas haya que agregar el puerto, el usuario o la clave"
+      echo "export PGPORT=54313"
+      echo "export PGUSER=postgres"
+      echo "export PGPASSWORD=admin"
+    fi
+    echo "err-code: $1"
+  fi
+  exit 1
+}
+
+if [ "$1" = "create-db" ]; then
+  psql --file=local-db-dump-create-db.sql || informar_error $?
+elif [ -z "$1" ]; then
+  psql --no-password -c 'select version() as "postgres version"' || informar_error $?
+  echo "$0 create-db"
+  echo "$0 create-schema"
+  echo "$0 other.sql database_db"
+else
+  if [ "$1" = "create-schema" ]; then
+    script=local-db-dump.sql
+  else
+    script=$1
+  fi
+  base=$2
+  if [ -z "$base" ]; then
+    base=$(base_de_local_config)
+    if [ -z "$base" ]; then
+      echo "falta el nombre de la base de datos y no se pudo leer de local-config.yaml"
+      echo "se la puede especificar como parametro, por ejemplo"
+      echo "$0 $1 esta_db"
+      exit 1
+    fi
+  fi
+  if [ "$1" = "dump4install" ]; then
+    if [ -f install/local-dump-2.psql ]; then mv install/local-dump-2.psql install/local-dump-3.psql; fi
+    if [ -f install/local-dump.psql ]; then mv install/local-dump.psql install/local-dump-2.psql; fi
+    pg_dump --dbname="$base" --file=install/local-dump.psql -E UTF8 -F plain --blobs --exclude-schema public || informar_error $?
+    echo "Se genero el archivo install/local-dump.psql si habia uno anterior se copio a install/local-dump-2.psql"
+    echo "el proximo \`npm start -- --dump\` db va a incluir los datos de ese archivo. Se puede continuar asi:"
+    echo "npm run prepare && npm start -- --dump-db && run-sql create-schema && npm start"
+  else
+    psql --file="$script" $single_transaction "$base" || informar_error $?
+  fi
+fi
